@@ -1,0 +1,10 @@
+{
+  "name": "ModernKPI",
+  "description": "A modern, customizable KPI card extension for Qlik Sense with enhanced design options, tooltips, and multiple comparison values",
+  "type": "visualization",
+  "version": "2.0.0",
+  "author": "Ala Aldin Hija",
+  "icon": "extension",
+  "keywords": "kpi, card, dashboard, visualization, modern, tooltip"
+}
+

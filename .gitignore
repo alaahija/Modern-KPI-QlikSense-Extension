@@ -1,0 +1,24 @@
+# Qlik Sense Meta files
+.wmeta
+.wmeta/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node modules (if you add build steps later)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Zip files (don't upload the distributed zip to the repo root usually, use releases)
+*.zip

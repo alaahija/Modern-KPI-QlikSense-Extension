@@ -1,0 +1,2009 @@
+/* ============================================
+   KPI CARD EXTENSION - OPTIMIZED CSS
+   ============================================ */
+
+/* CSS Variables - All colors are overridable */
+:root {
+    --kpi-bg-color: #ffffff;
+    --kpi-text-color: #222222;
+    --kpi-main-value-color: #222222;
+    --kpi-border-color: #e0e0e0;
+    --kpi-chart-color: #6aa7ff;
+    --kpi-divider-h-color: #ececec;
+    --kpi-divider-v-color: #ebebeb;
+    --kpi-title-color: #4a4a4a;
+    --kpi-comp-title-color: #666666;
+}
+
+/* Reset Qlik wrappers - ONLY for KPI extension containers */
+/* Using class-based selector for better browser compatibility */
+/* AGGRESSIVE: Target ALL possible Qlik Sense wrapper combinations */
+.kpi-extension-wrapper,
+.kpi-extension-wrapper.qv-object,
+.kpi-extension-wrapper.qv-object-wrapper,
+.kpi-extension-wrapper.qv-object-content,
+.kpi-extension-wrapper.qv-object-content-wrapper,
+.qv-object.kpi-extension-wrapper,
+.qv-object-wrapper.kpi-extension-wrapper,
+.qv-object-content.kpi-extension-wrapper,
+.qv-object-content-wrapper.kpi-extension-wrapper,
+.qv-panel.kpi-extension-wrapper,
+.qv-panel-content.kpi-extension-wrapper,
+.qv-inner-object.kpi-extension-wrapper {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+/* Ensure direct child fills container */
+.kpi-extension-wrapper>div,
+.kpi-extension-wrapper.qv-object>div,
+.kpi-extension-wrapper.qv-object-wrapper>div,
+.kpi-extension-wrapper.qv-object-content>div,
+.kpi-extension-wrapper.qv-object-content-wrapper>div,
+.kpi-extension-wrapper>*,
+.kpi-extension-wrapper.qv-object>*,
+.kpi-extension-wrapper.qv-object-wrapper>*,
+.kpi-extension-wrapper.qv-object-content>*,
+.kpi-extension-wrapper.qv-object-content-wrapper>* {
+    width: 100% !important;
+    height: 100% !important;
+    flex: 1 1 auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* Remove any white background from Qlik containers - ONLY for KPI extension */
+.kpi-extension-wrapper.qv-object-content>div,
+.kpi-extension-wrapper.qv-object-wrapper>div {
+    background: transparent !important;
+}
+
+/* Fallback using :has() for modern browsers (if class addition fails) */
+/* AGGRESSIVE: Target ALL Qlik wrappers that contain our KPI */
+.qv-object:has(.kpi-container):not(.kpi-extension-wrapper),
+.qv-object-wrapper:has(.kpi-container):not(.kpi-extension-wrapper),
+.qv-object-content:has(.kpi-container):not(.kpi-extension-wrapper),
+.qv-object-content-wrapper:has(.kpi-container):not(.kpi-extension-wrapper),
+.qv-panel:has(.kpi-container),
+.qv-panel-content:has(.kpi-container),
+.qv-inner-object:has(.kpi-container),
+.qv-object:has(.kpi-size-wrapper):not(.kpi-extension-wrapper),
+.qv-object-wrapper:has(.kpi-size-wrapper):not(.kpi-extension-wrapper),
+.qv-object-content:has(.kpi-size-wrapper):not(.kpi-extension-wrapper),
+.qv-object-content-wrapper:has(.kpi-size-wrapper):not(.kpi-extension-wrapper) {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+/* Ensure direct children of fallback selectors also fill */
+/* AGGRESSIVE: Target ALL children, not just divs */
+.qv-object:has(.kpi-container)>div,
+.qv-object-wrapper:has(.kpi-container)>div,
+.qv-object-content:has(.kpi-container)>div,
+.qv-object-content-wrapper:has(.kpi-container)>div,
+.qv-object:has(.kpi-container)>*,
+.qv-object-wrapper:has(.kpi-container)>*,
+.qv-object-content:has(.kpi-container)>*,
+.qv-object-content-wrapper:has(.kpi-container)>*,
+.qv-object:has(.kpi-size-wrapper)>*,
+.qv-object-wrapper:has(.kpi-size-wrapper)>*,
+.qv-object-content:has(.kpi-size-wrapper)>*,
+.qv-object-content-wrapper:has(.kpi-size-wrapper)>* {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* MAIN CARD CONTAINER */
+.kpi-container {
+    font-family: Inter, Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--kpi-bg-color);
+    color: var(--kpi-text-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 20px !important;
+    /* Internal padding for content */
+    transition: box-shadow 0.3s ease, transform 0.3s ease, background 0.3s ease;
+    width: 100% !important;
+    height: 100% !important;
+    /* Fill the wrapper completely */
+    min-height: 0 !important;
+    /* Remove fixed min-height to allow full expansion */
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    position: relative !important;
+    overflow: visible !important;
+    /* Must be visible for tooltips and flip card 3D transforms */
+    margin: 0 !important;
+    margin-top: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    margin-left: 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    /* Container fills wrapper and sizes naturally based on content */
+}
+
+/* Hover lift effect — subtle elevation + shadow */
+.kpi-container:hover {
+    box-shadow: var(--kpi-hover-shadow, 0 6px 20px rgba(0, 0, 0, 0.12));
+    transform: translateY(-2px);
+}
+
+/* Disable hover lift during flip animation to prevent visual glitch */
+.kpi-container.kpi-flip-card:hover {
+    transform: none;
+}
+
+/* HEADER SECTION */
+.kpi-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    /* Default, will be overridden by inline style */
+    font-weight: 500;
+    color: var(--kpi-title-color);
+    margin-top: 4px !important;
+    margin-bottom: 8px !important;
+    line-height: 1.4;
+    padding-left: 8px;
+    padding-right: 8px;
+    flex-shrink: 0;
+    /* Ensure header position is always consistent */
+}
+
+.kpi-title {
+    display: inline-block;
+    transition: font-size 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+    /* Font size set via inline style from JS */
+}
+
+/* Title group — wraps title + subtitle vertically inside the flex header */
+.kpi-title-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* allow text truncation */
+    flex: 1 1 auto;
+}
+
+/* Subtitle — secondary label below the main title */
+.kpi-subtitle {
+    display: block;
+    width: 100%;
+    margin-top: 1px;
+    font-weight: 400;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+    opacity: 0.85;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: font-size 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+}
+
+.kpi-header.icon-top {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+/* Alignment via data-align attribute (avoids fragile [style*=] selectors) */
+.kpi-header.icon-top[data-align="left"] {
+    align-items: flex-start;
+    padding-left: 8px;
+    padding-right: 0;
+}
+
+.kpi-header.icon-top[data-align="center"] {
+    align-items: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.kpi-header.icon-top[data-align="right"] {
+    align-items: flex-end;
+    padding-right: 8px;
+    padding-left: 0;
+}
+
+.kpi-header[data-align="left"]:not(.icon-top) {
+    justify-content: flex-start;
+    padding-left: 8px;
+    padding-right: 0;
+}
+
+.kpi-header[data-align="center"]:not(.icon-top) {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.kpi-header[data-align="right"]:not(.icon-top) {
+    justify-content: flex-end;
+    padding-right: 8px;
+    padding-left: 0;
+}
+
+.title-icon {
+    display: inline-block;
+    vertical-align: middle;
+    opacity: 0.85;
+    flex-shrink: 0;
+}
+
+.kpi-header.icon-top .title-icon {
+    margin-bottom: 4px;
+}
+
+/* MAIN VALUE */
+.main-value {
+    font-weight: 700;
+    margin-top: 0 !important;
+    margin-bottom: 4px !important;
+    line-height: 1.2;
+    font-size: 34px;
+    /* Color is set via inline style to allow dynamic updates */
+    word-break: break-word;
+    transition: font-size 0.3s ease, margin-bottom 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+    flex-shrink: 1;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    /* Ensure main value position is always consistent */
+}
+
+.main-value.main-value-align-left {
+    justify-content: flex-start;
+}
+
+.main-value.main-value-align-center {
+    justify-content: center;
+}
+
+.main-value.main-value-align-right {
+    justify-content: flex-end;
+}
+
+/* When chart is disabled, adjust spacing only - font size is handled by inline styles */
+.kpi-container.no-chart .main-value {
+    margin-bottom: 12px !important;
+}
+
+/* When no bottom content at all (no chart AND no comparison), keep title at top
+   but center the main value in the remaining vertical space */
+.kpi-container.kpi-center-content {
+    justify-content: flex-start !important;
+}
+
+.kpi-container.kpi-center-content .main-value {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 0 !important;
+}
+
+/* Add padding when aligned left to prevent edge touching */
+.main-value-align-left {
+    padding-left: 12px;
+}
+
+/* Add padding when aligned right to prevent edge touching */
+.main-value-align-right {
+    padding-right: 12px;
+}
+
+/* MINI CHART CONTAINER */
+.chart-container {
+    margin-top: 8px;
+    margin-bottom: 2px;
+    width: 100%;
+    padding: 0;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+/* When chart container doesn't exist, ensure no spacing issues */
+.kpi-container.no-chart .chart-container {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+}
+
+/* When chart is disabled, move divider and comparison KPIs UP to fill empty space */
+/* Main value font size is reduced and has proper spacing */
+.kpi-container.no-chart .divider-h {
+    /* margin-top is controlled via inline style (auto or custom position) */
+    margin-bottom: 0 !important;
+}
+
+.kpi-container.no-chart .comparison-blocks {
+    margin-top: 4px !important;
+    padding-top: 0 !important;
+    margin-bottom: 6px !important;
+}
+
+/* Reduce spacing for smaller cards */
+.kpi-container .divider-h {
+    margin-bottom: 0 !important;
+}
+
+/* =========================================================
+   BOTH MODE — compact layout when chart + comparison coexist
+   ========================================================= */
+.kpi-container.kpi-both-mode .chart-container {
+    margin-top: 4px;
+    margin-bottom: 0;
+}
+
+.kpi-container.kpi-both-mode .main-value {
+    margin-bottom: 0 !important;
+}
+
+.kpi-container.kpi-both-mode .divider-h {
+    margin-top: 4px !important;
+}
+
+.kpi-container.kpi-both-mode .comparison-blocks {
+    margin-top: 0 !important;
+    margin-bottom: 2px !important;
+    gap: 4px;
+}
+
+.kpi-container.kpi-both-mode .mini-chart-xaxis {
+    padding-top: 1px;
+}
+
+.miniChart {
+    width: 100%;
+    height: 70px;
+    /* default, overridden by inline style from JS */
+    display: block;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    flex-shrink: 1;
+    min-height: 30px;
+}
+
+
+/* X-axis labels row (rendered as HTML below SVG chart to avoid SVG text distortion) */
+.mini-chart-xaxis {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    padding: 3px 0 0 0;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    color: #666666;
+    line-height: 1.2;
+}
+
+.mini-chart-xaxis-label {
+    flex: 1 1 0;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    padding: 0 1px;
+}
+
+/* Chart elements - colors set inline from JS */
+
+/* Linear line path */
+.miniChart .miniChart-line {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Legacy polyline support */
+.miniChart polyline {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    animation: drawLine 0.8s ease-out forwards;
+}
+
+/* X-axis labels */
+.miniChart text {
+    font-family: Inter, Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    pointer-events: none;
+}
+
+/* ============================================
+   TOOLTIP ICON AND POPUP
+   ============================================ */
+.kpi-tooltip-icon-wrapper {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1000;
+    cursor: help;
+    pointer-events: auto;
+    /* Ensure it doesn't affect layout when empty */
+}
+
+.kpi-tooltip-icon {
+    color: #666;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    display: inline-block;
+}
+
+.kpi-tooltip-icon:hover {
+    opacity: 1;
+    color: #333;
+}
+
+/* Tooltip popup */
+.kpi-tooltip-popup {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: #333;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 300px;
+    min-width: 200px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    transform: translateY(-5px);
+    pointer-events: none;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.kpi-tooltip-icon-wrapper:hover .kpi-tooltip-popup {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* ============================================
+   FLIP CARD TOOLTIP STYLES
+   ============================================ */
+/* Size wrapper - preserves natural height for Qlik Sense extension sizing */
+/* Also acts as container query context for responsive sizing */
+.kpi-size-wrapper {
+    position: relative;
+    width: 100% !important;
+    height: 100% !important;
+    /* Fill Qlik Sense extension container */
+    min-height: 0 !important;
+    /* Remove fixed min-height to allow full expansion */
+    display: block;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    container-type: inline-size;
+    container-name: kpi-card;
+}
+
+.kpi-flip-card-wrapper {
+    perspective: 1000px;
+    width: 100% !important;
+    height: 100% !important;
+    /* Fill the size wrapper */
+    min-height: 0 !important;
+    /* Remove fixed min-height to allow full expansion */
+    position: relative;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+.kpi-flip-card {
+    position: relative;
+    width: 100% !important;
+    height: 100% !important;
+    /* Fill the wrapper */
+    min-height: 0 !important;
+    /* Remove fixed min-height to allow full expansion */
+    transform-style: preserve-3d;
+    transition: transform 0.6s ease;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* When NOT in flip card mode, ensure wrapper doesn't affect layout */
+/* The size wrapper always preserves height regardless of mode */
+
+/* Trigger flip when hovering over the tooltip icon - handled by JavaScript */
+
+/* Fallback for browsers without :has() support */
+.tooltip-icon-trigger {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1000;
+    cursor: help;
+    pointer-events: auto;
+}
+
+/* Click-to-toggle: pointer cursor on icon */
+.tooltip-icon-trigger[data-flip-trigger="iconClick"] {
+    cursor: pointer;
+}
+
+.flip-card-front-content {
+    position: relative;
+    width: 100% !important;
+    height: 100% !important;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    box-sizing: border-box;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    /* Normal flow - flex: 1 fills parent, justify-content: space-between pushes comparison to bottom */
+}
+
+/* Ensure tooltip icon doesn't affect layout when present or absent */
+.kpi-container>.kpi-tooltip-icon-wrapper,
+.kpi-container>.tooltip-icon-trigger {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    z-index: 1000;
+    /* Already absolute, but ensure it doesn't affect flex layout */
+    /* Use !important to override any conflicting styles */
+    pointer-events: auto;
+    /* Ensure it never affects the flexbox flow */
+    flex: 0 0 auto;
+    width: auto;
+    height: auto;
+}
+
+/* When NOT in flip card mode, ensure container content maintains layout */
+.kpi-container:not(.kpi-flip-card) {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Ensure header is always in the same position regardless of tooltip */
+.kpi-container:not(.kpi-flip-card)>.kpi-header {
+    order: 1;
+}
+
+.kpi-container:not(.kpi-flip-card)>.main-value {
+    order: 2;
+}
+
+.kpi-container:not(.kpi-flip-card)>.chart-container {
+    order: 3;
+}
+
+.kpi-container:not(.kpi-flip-card)>.divider-h {
+    order: 4;
+}
+
+.kpi-container:not(.kpi-flip-card)>.comparison-blocks {
+    order: 5;
+}
+
+/* Tooltip icon should not affect order */
+.kpi-container:not(.kpi-flip-card)>.kpi-tooltip-icon-wrapper,
+.kpi-container:not(.kpi-flip-card)>.tooltip-icon-trigger {
+    order: 0;
+    position: absolute;
+}
+
+.flip-card-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: rotateY(180deg);
+    background: #fff;
+    /* overridden inline when inherit-bg is on */
+    border-radius: inherit;
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    cursor: default;
+}
+
+.flip-card-back-content {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: center;
+    align-items: stretch;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 100%;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Back face title */
+.flip-back-title {
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Back face divider */
+.flip-back-divider {
+    width: 100%;
+    height: 1px;
+    margin: 4px 0;
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+/* Insight row label (small text above value) */
+.flip-back-row-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: #888;
+    letter-spacing: 0.02em;
+    margin-top: 4px;
+    margin-bottom: -2px;
+    line-height: 1.3;
+    text-transform: uppercase;
+}
+
+/* Custom scrollbar for webkit browsers - more subtle */
+.flip-card-back-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.flip-card-back-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.flip-card-back-content::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.flip-card-back-content::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.kpi-description {
+    line-height: 1.5;
+    margin: 0;
+    padding: 0 8px;
+    width: 100%;
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    text-align: inherit;
+    /* inherits from .flip-card-back-content text-align */
+}
+
+.kpi-expression-value {
+    font-weight: 600;
+    margin: 4px 0;
+    padding: 0;
+    background: transparent;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    /* Font size, color, and text-align are set inline */
+}
+
+.kpi-insight-description {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #666;
+    margin-top: 4px;
+}
+
+/* Tooltip arrow */
+.kpi-tooltip-popup::before {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    right: 16px;
+    border: 6px solid transparent;
+    border-bottom-color: #333;
+}
+
+@keyframes drawLine {
+    from {
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+    }
+
+    to {
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 0;
+    }
+}
+
+.miniChart rect {
+    animation: growBar 0.6s ease-out forwards;
+    transform-origin: bottom;
+}
+
+@keyframes growBar {
+    from {
+        transform: scaleY(0);
+        opacity: 0;
+    }
+
+    to {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+
+.miniChart-hover-line {
+    stroke: #666666;
+    stroke-width: 1.5;
+    shape-rendering: crispEdges;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+}
+
+/* DIVIDERS */
+.divider-h {
+    margin: 4px 0 0 0;
+    /* margin-top is controlled via inline style (auto or custom position) */
+    height: 1px;
+    /* Default thickness, can be overridden via inline style */
+    background: var(--kpi-divider-h-color);
+    flex-shrink: 0;
+    transition: background 0.3s ease, margin 0.3s ease;
+    /* Width, height (thickness), and margin-top are applied via inline styles */
+}
+
+.divider-h.hidden {
+    display: none;
+}
+
+.divider-v {
+    width: 1px;
+    /* Default thickness, can be overridden via inline style */
+    background: var(--kpi-divider-v-color);
+    flex-shrink: 0;
+    align-self: stretch;
+    /* Default: stretch to match comparison blocks height */
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    opacity: 0.6;
+    /* Soften visual weight */
+    transition: background 0.3s ease, opacity 0.3s ease;
+    /* Width, height, padding (top/bottom), and align-self are applied via inline styles */
+    /* Height: auto (default) = stretch to match blocks, custom px = fixed height centered */
+    /* When custom height is set, align-self: center is applied to center the divider */
+    /* This prevents the divider from penetrating the horizontal divider */
+}
+
+.divider-v.hidden {
+    display: none;
+}
+
+/* COMPARISON KPIs CONTAINER */
+.comparison-blocks {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: stretch !important;
+    /* Changed to stretch so divider matches block height */
+    gap: 6px;
+    flex-shrink: 1;
+    flex-grow: 0;
+    margin-top: 4px !important;
+    padding-top: 0 !important;
+    margin-bottom: 4px !important;
+    min-height: 0;
+}
+
+.comparison-blocks.one-block {
+    justify-content: center;
+}
+
+.comparison-blocks.two-blocks {
+    justify-content: space-between;
+}
+
+.comparison-blocks.three-blocks {
+    justify-content: space-between;
+}
+
+/* COMPARISON BLOCK */
+.comp-block {
+    flex: 1 1 0 !important;
+    text-align: center;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    min-width: 0;
+    align-self: stretch !important;
+    /* Match height with other blocks and divider */
+    height: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Ensure all comparison blocks have same baseline alignment */
+.comparison-blocks .comp-block {
+    vertical-align: top;
+}
+
+/* Icon when positioned above title - centered */
+.comp-icon-top {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 4px;
+    margin-top: 0;
+    width: 100%;
+    min-height: 20px;
+    flex-shrink: 0;
+}
+
+.comp-icon-top .comp-icon {
+    display: block;
+    margin: 0 auto;
+}
+
+.comp-title {
+    font-size: 12px;
+    /* Default, will be overridden by inline style */
+    color: var(--kpi-comp-title-color);
+    margin-bottom: 4px;
+    font-weight: 500;
+    line-height: 1.3;
+    margin-top: 0;
+    padding: 0;
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    white-space: normal;
+    transition: font-size 0.3s ease, color 0.3s ease;
+}
+
+.comp-value {
+    font-size: 18px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    line-height: 1.2;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    min-height: 1.2em;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    transition: font-size 0.3s ease, color 0.3s ease;
+}
+
+/* Trend micro-text under comparison value */
+.comp-trend {
+    font-size: 9px;
+    font-weight: 400;
+    line-height: 1.3;
+    margin-top: 2px;
+    opacity: 0.8;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    transition: font-size 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+}
+
+.comp-icon {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.comp-arrow {
+    font-size: 14px;
+    margin-right: 3px;
+    flex-shrink: 0;
+    line-height: 1;
+    transition: font-size 0.3s ease, color 0.3s ease;
+}
+
+/* Wrapper for animated comparison number text */
+.comp-num {
+    display: inline;
+}
+
+/* TOOLTIP */
+.kpi-tooltip {
+    position: absolute;
+    background: rgba(30, 30, 30, 0.95);
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 100000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    font-weight: 500;
+}
+
+.kpi-tooltip b {
+    display: block;
+    margin-bottom: 2px;
+    font-weight: 600;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS - Container Queries
+   Adapts KPI card to its actual width, not viewport.
+   Works when moving from 24" to 15" screen, or
+   changing Qlik grid spacing (e.g. 41, 20, etc.)
+   ============================================ */
+
+/* --- LARGE cards (> 320px) - spacious layout --- */
+@container kpi-card (min-width: 321px) {
+    .kpi-container {
+        padding: 20px !important;
+    }
+
+    .kpi-header {
+        margin-bottom: 14px !important;
+        gap: 8px;
+    }
+
+    .comparison-blocks {
+        gap: 8px;
+    }
+}
+
+/* --- MEDIUM cards (221px - 320px) - balanced layout --- */
+@container kpi-card (max-width: 320px) {
+    .kpi-container {
+        padding: 14px !important;
+    }
+
+    .kpi-header {
+        margin-bottom: 10px !important;
+        margin-top: 2px !important;
+        gap: 6px;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    .main-value {
+        margin-bottom: 2px !important;
+    }
+
+    .kpi-container.no-chart .main-value {
+        margin-bottom: 8px !important;
+    }
+
+    .comparison-blocks {
+        gap: 6px;
+        margin-top: 2px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .comp-title {
+        font-size: 11px;
+        margin-bottom: 3px;
+    }
+
+    .comp-value {
+        font-size: 15px;
+    }
+
+    .comp-arrow {
+        font-size: 12px;
+    }
+
+    .comp-trend {
+        font-size: 8px;
+    }
+
+    .kpi-subtitle {
+        font-size: 10px;
+    }
+
+    .divider-v {
+        margin-top: 3px !important;
+        margin-bottom: 3px !important;
+    }
+
+    .chart-container {
+        margin-top: 10px;
+    }
+
+    .miniChart {
+        height: 55px;
+    }
+
+    .main-value-align-left {
+        padding-left: 8px;
+    }
+
+    .main-value-align-right {
+        padding-right: 8px;
+    }
+}
+
+/* --- COMPACT cards (161px - 220px) - tight layout for grid spacing ~41 --- */
+@container kpi-card (max-width: 220px) {
+    .kpi-container {
+        padding: 10px !important;
+    }
+
+    .kpi-header {
+        margin-bottom: 6px !important;
+        margin-top: 2px !important;
+        gap: 4px;
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+
+    .kpi-header.icon-top {
+        gap: 6px;
+        margin-top: 4px;
+    }
+
+    .main-value {
+        margin-bottom: 0px !important;
+        line-height: 1.15;
+    }
+
+    .kpi-container.no-chart .main-value {
+        margin-bottom: 6px !important;
+    }
+
+    .comparison-blocks {
+        gap: 4px;
+        margin-top: 2px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .comp-title {
+        font-size: 10px;
+        margin-bottom: 2px;
+        line-height: 1.2;
+    }
+
+    .comp-value {
+        font-size: 13px;
+        gap: 2px;
+        line-height: 1.15;
+        min-height: 1.15em;
+    }
+
+    .comp-arrow {
+        font-size: 11px;
+        margin-right: 1px;
+    }
+
+    .comp-trend {
+        font-size: 7px;
+        margin-top: 1px;
+    }
+
+    .kpi-subtitle {
+        font-size: 9px;
+        margin-top: 0;
+    }
+
+    .divider-v {
+        margin-top: 2px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .divider-h {
+        margin-bottom: 0 !important;
+    }
+
+    .chart-container {
+        margin-top: 6px;
+        margin-bottom: 2px;
+    }
+
+    .miniChart {
+        height: 45px;
+    }
+
+    .main-value-align-left {
+        padding-left: 4px;
+    }
+
+    .main-value-align-right {
+        padding-right: 4px;
+    }
+
+    .kpi-tooltip-icon-wrapper,
+    .tooltip-icon-trigger {
+        top: 6px !important;
+        right: 6px !important;
+    }
+}
+
+/* --- TINY cards (≤ 160px) - minimal layout --- */
+@container kpi-card (max-width: 160px) {
+    .kpi-container {
+        padding: 8px !important;
+    }
+
+    .kpi-header {
+        margin-bottom: 4px !important;
+        margin-top: 1px !important;
+        gap: 3px;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .kpi-header.icon-top {
+        gap: 4px;
+        margin-top: 2px;
+    }
+
+    .main-value {
+        margin-bottom: 0px !important;
+        line-height: 1.1;
+    }
+
+    .kpi-container.no-chart .main-value {
+        margin-bottom: 4px !important;
+    }
+
+    .comparison-blocks {
+        gap: 2px;
+        margin-top: 1px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .comp-title {
+        font-size: 9px;
+        margin-bottom: 1px;
+        line-height: 1.15;
+    }
+
+    .comp-value {
+        font-size: 11px;
+        gap: 1px;
+        line-height: 1.1;
+        min-height: 1.1em;
+    }
+
+    .comp-arrow {
+        font-size: 9px;
+        margin-right: 1px;
+    }
+
+    .comp-trend {
+        font-size: 7px;
+        margin-top: 1px;
+    }
+
+    .kpi-subtitle {
+        font-size: 8px;
+        margin-top: 0;
+    }
+
+    .divider-v {
+        margin-top: 1px !important;
+        margin-bottom: 1px !important;
+    }
+
+    .chart-container {
+        margin-top: 4px;
+        margin-bottom: 1px;
+    }
+
+    .miniChart {
+        height: 35px;
+    }
+
+    .main-value-align-left {
+        padding-left: 2px;
+    }
+
+    .main-value-align-right {
+        padding-right: 2px;
+    }
+
+    .kpi-tooltip-icon-wrapper,
+    .tooltip-icon-trigger {
+        top: 4px !important;
+        right: 4px !important;
+    }
+
+    .kpi-tooltip-icon {
+        font-size: 14px !important;
+    }
+
+    .title-icon {
+        max-width: 16px;
+        max-height: 16px;
+    }
+}
+
+/* --- SHORT cards (height-based) - tighten vertical spacing --- */
+/* Note: @container height queries need container-type: size (not just inline-size) */
+/* We rely on JS .kpi-short class for height detection instead */
+
+/* --- ULTRA-TINY cards (≤ 120px) - stack comparison vertically --- */
+@container kpi-card (max-width: 120px) {
+    .kpi-container {
+        padding: 6px !important;
+    }
+
+    .kpi-header {
+        margin-bottom: 2px !important;
+    }
+
+    .comparison-blocks {
+        flex-direction: column !important;
+        gap: 4px;
+        align-items: center !important;
+    }
+
+    .divider-v {
+        display: none !important;
+    }
+
+    .comp-title {
+        font-size: 8px;
+    }
+
+    .comp-value {
+        font-size: 10px;
+    }
+
+    .comp-trend {
+        display: none;
+    }
+
+    .kpi-subtitle {
+        display: none;
+    }
+}
+
+/* ============================================
+   JS FALLBACK CLASSES - for older Qlik Sense
+   without container query support.
+   JS adds .kpi-compact / .kpi-tiny / .kpi-micro
+   based on measured width.
+   ============================================ */
+
+/* Compact (161-220px) */
+.kpi-compact .kpi-container {
+    padding: 10px !important;
+}
+
+.kpi-compact .kpi-header {
+    margin-bottom: 6px !important;
+    margin-top: 2px !important;
+    gap: 4px;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.kpi-compact .main-value {
+    margin-bottom: 0px !important;
+    line-height: 1.15;
+}
+
+.kpi-compact .kpi-container.no-chart .main-value {
+    margin-bottom: 6px !important;
+}
+
+.kpi-compact .comparison-blocks {
+    gap: 4px;
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+}
+
+.kpi-compact .comp-title {
+    font-size: 10px;
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+
+.kpi-compact .comp-value {
+    font-size: 13px;
+    gap: 2px;
+}
+
+.kpi-compact .comp-arrow {
+    font-size: 11px;
+    margin-right: 1px;
+}
+
+.kpi-compact .comp-trend {
+    font-size: 7px;
+    margin-top: 1px;
+}
+
+.kpi-compact .kpi-subtitle {
+    font-size: 9px;
+    margin-top: 0;
+}
+
+.kpi-compact .divider-v {
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+}
+
+.kpi-compact .miniChart {
+    height: 45px;
+}
+
+.kpi-compact .kpi-tooltip-icon-wrapper,
+.kpi-compact .tooltip-icon-trigger {
+    top: 6px !important;
+    right: 6px !important;
+}
+
+/* Tiny (121-160px) */
+.kpi-tiny .kpi-container {
+    padding: 8px !important;
+}
+
+.kpi-tiny .kpi-header {
+    margin-bottom: 4px !important;
+    margin-top: 1px !important;
+    gap: 3px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.kpi-tiny .main-value {
+    margin-bottom: 0px !important;
+    line-height: 1.1;
+}
+
+.kpi-tiny .kpi-container.no-chart .main-value {
+    margin-bottom: 4px !important;
+}
+
+.kpi-tiny .comparison-blocks {
+    gap: 2px;
+    margin-top: 1px !important;
+    margin-bottom: 2px !important;
+}
+
+.kpi-tiny .comp-title {
+    font-size: 9px;
+    margin-bottom: 1px;
+}
+
+.kpi-tiny .comp-value {
+    font-size: 11px;
+    gap: 1px;
+}
+
+.kpi-tiny .comp-arrow {
+    font-size: 9px;
+}
+
+.kpi-tiny .comp-trend {
+    font-size: 7px;
+    margin-top: 1px;
+}
+
+.kpi-tiny .kpi-subtitle {
+    font-size: 8px;
+    margin-top: 0;
+}
+
+.kpi-tiny .divider-v {
+    margin-top: 1px !important;
+    margin-bottom: 1px !important;
+}
+
+.kpi-tiny .miniChart {
+    height: 35px;
+}
+
+.kpi-tiny .kpi-tooltip-icon-wrapper,
+.kpi-tiny .tooltip-icon-trigger {
+    top: 4px !important;
+    right: 4px !important;
+}
+
+/* Micro (≤ 120px) - stack vertically */
+.kpi-micro .kpi-container {
+    padding: 6px !important;
+}
+
+.kpi-micro .kpi-header {
+    margin-bottom: 2px !important;
+}
+
+.kpi-micro .comparison-blocks {
+    flex-direction: column !important;
+    gap: 4px;
+    align-items: center !important;
+}
+
+.kpi-micro .divider-v {
+    display: none !important;
+}
+
+.kpi-micro .comp-title {
+    font-size: 8px;
+}
+
+.kpi-micro .comp-value {
+    font-size: 10px;
+}
+
+.kpi-micro .comp-trend {
+    display: none;
+}
+
+.kpi-micro .kpi-subtitle {
+    display: none;
+}
+
+/* Short cards (height ≤ 120px) - tighten vertical spacing */
+.kpi-short .kpi-container {
+    padding-top: 6px !important;
+    padding-bottom: 4px !important;
+}
+
+.kpi-short .kpi-header {
+    margin-top: 0px !important;
+    margin-bottom: 2px !important;
+}
+
+.kpi-short .main-value {
+    margin-bottom: 0px !important;
+    line-height: 1.1;
+}
+
+.kpi-short .kpi-container.no-chart .main-value {
+    margin-bottom: 2px !important;
+}
+
+.kpi-short .divider-h {
+    margin-top: 0px !important;
+    margin-bottom: 0 !important;
+}
+
+.kpi-short .comparison-blocks {
+    margin-top: 1px !important;
+    margin-bottom: 0px !important;
+    gap: 3px;
+}
+
+.kpi-short .comp-title {
+    margin-bottom: 1px;
+    line-height: 1.1;
+}
+
+.kpi-short .comp-value {
+    line-height: 1.1;
+    min-height: auto;
+}
+
+.kpi-short .comp-trend {
+    font-size: 7px;
+    margin-top: 1px;
+}
+
+.kpi-short .kpi-subtitle {
+    font-size: 8px;
+    margin-top: 0;
+}
+
+/* ============================================
+   VIEWPORT MEDIA QUERY - last-resort fallback
+   ============================================ */
+@media (max-width: 400px) {
+    .kpi-container {
+        padding: 12px !important;
+    }
+
+    .main-value {
+        font-size: 24px;
+    }
+
+    .miniChart {
+        height: 50px;
+    }
+
+    .comparison-blocks {
+        gap: 4px;
+    }
+
+    .divider-h {
+        margin-bottom: 0 !important;
+    }
+}
+
+/* Ensure no Qlik interference - only reset margin, keep internal padding */
+.qv-object .kpi-container,
+.qv-object-wrapper .kpi-container,
+.qv-object-content .kpi-container {
+    margin: 0 !important;
+}
+
+/* Hide Qlik Sense header element above KPI card */
+.kpi-extension-wrapper .qv-object-header,
+.kpi-extension-wrapper header.qv-object-header,
+.qv-object:has(.kpi-container) .qv-object-header,
+.qv-object-wrapper:has(.kpi-container) .qv-object-header,
+.qv-object-content:has(.kpi-container) .qv-object-header,
+.qv-inner-object:has(.kpi-container) .qv-object-header {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* ============================================
+   HIDE HOVER MENU (Native Qlik Sense General Settings)
+   ============================================ */
+/* Hide hover menu when "Show hover menu" is disabled */
+.kpi-hide-hover-menu .qv-object-menu,
+.kpi-hide-hover-menu .qv-object-header-menu,
+.kpi-hide-hover-menu .qv-object-header .qv-object-menu,
+.kpi-hide-hover-menu .qv-object-menu-button,
+.kpi-hide-hover-menu .qv-object-header .qv-object-menu-button,
+.kpi-hide-hover-menu .qv-object-header-menu-button,
+.kpi-hide-hover-menu .qv-object-header .qv-object-header-menu-button,
+.kpi-hide-hover-menu .qv-object-header .qv-object-menu-container,
+.kpi-hide-hover-menu .qv-object-header-menu-container,
+.kpi-hide-hover-menu .qv-object-header .qv-object-menu-trigger,
+.kpi-hide-hover-menu .qv-object-menu-trigger,
+/* Target the three dots menu and maximize icon */
+.kpi-hide-hover-menu .qv-object-header [class*="menu"],
+.kpi-hide-hover-menu .qv-object-header [class*="Menu"],
+.kpi-hide-hover-menu .qv-object-header [data-action="menu"],
+.kpi-hide-hover-menu .qv-object-header [data-action="maximize"],
+.kpi-hide-hover-menu .qv-object-header button[aria-label*="menu"],
+.kpi-hide-hover-menu .qv-object-header button[aria-label*="Menu"],
+.kpi-hide-hover-menu .qv-object-header button[aria-label*="More"],
+/* Common Qlik Sense hover menu selectors */
+.kpi-hide-hover-menu .qv-object-header .lui-button[data-action="menu"],
+.kpi-hide-hover-menu .qv-object-header .lui-button[data-action="maximize"],
+.kpi-hide-hover-menu .qv-object-header .lui-icon--menu,
+.kpi-hide-hover-menu .qv-object-header .lui-icon--more,
+.kpi-hide-hover-menu .qv-object-header .lui-icon--expand {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Also hide when using :has() selector for modern browsers */
+.qv-object:has(.kpi-hide-hover-menu) .qv-object-menu,
+.qv-object-wrapper:has(.kpi-hide-hover-menu) .qv-object-menu,
+.qv-object-content:has(.kpi-hide-hover-menu) .qv-object-menu,
+.qv-object:has(.kpi-hide-hover-menu) .qv-object-header-menu,
+.qv-object-wrapper:has(.kpi-hide-hover-menu) .qv-object-header-menu,
+.qv-object-content:has(.kpi-hide-hover-menu) .qv-object-header-menu,
+.qv-object:has(.kpi-hide-hover-menu) .qv-object-header .qv-object-menu,
+.qv-object-wrapper:has(.kpi-hide-hover-menu) .qv-object-header .qv-object-menu,
+.qv-object-content:has(.kpi-hide-hover-menu) .qv-object-header .qv-object-menu {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* ============================================
+   LOADING SKELETON
+   ============================================ */
+@keyframes kpi-shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Fade-in when real content replaces skeleton */
+@keyframes kpi-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.kpi-container:not(.kpi-skeleton) {
+    animation: kpi-fade-in 0.3s ease-out;
+}
+
+.kpi-skeleton {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    background: var(--kpi-bg-color, #ffffff);
+    position: relative;
+}
+
+.kpi-skeleton-bar {
+    border-radius: 4px;
+    background: linear-gradient(90deg,
+            rgba(0, 0, 0, 0.06) 25%,
+            rgba(0, 0, 0, 0.10) 50%,
+            rgba(0, 0, 0, 0.06) 75%);
+    background-size: 200% 100%;
+    animation: kpi-shimmer 1.5s ease-in-out infinite;
+}
+
+.kpi-skeleton-title {
+    width: 40%;
+    height: 12px;
+    margin-bottom: 14px;
+}
+
+.kpi-skeleton-value {
+    width: 65%;
+    height: 26px;
+    margin-bottom: 16px;
+}
+
+.kpi-skeleton-divider {
+    width: 100%;
+    height: 1px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.kpi-skeleton-comps {
+    display: flex;
+    gap: 16px;
+}
+
+.kpi-skeleton-comp {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.kpi-skeleton-comp-title {
+    width: 60%;
+    height: 10px;
+}
+
+.kpi-skeleton-comp-value {
+    width: 50%;
+    height: 16px;
+}
+
+/* Chart skeleton placeholder */
+.kpi-skeleton-chart {
+    width: 100%;
+    height: 50px;
+    margin-top: 10px;
+    border-radius: 4px;
+    opacity: 0.3;
+}
+
+/* Additional Qlik wrapper resets - ONLY for KPI extension */
+.kpi-extension-wrapper.qv-panel,
+.kpi-extension-wrapper.qv-panel-content,
+.kpi-extension-wrapper.qv-inner-object,
+.qv-panel:has(.kpi-container),
+.qv-panel-content:has(.kpi-container),
+.qv-inner-object:has(.kpi-container) {
+    background: transparent !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* Ensure the root $element passed to paint() fills 100% */
+.qv-object:has(.kpi-size-wrapper),
+.qv-object-wrapper:has(.kpi-size-wrapper),
+.qv-object-content:has(.kpi-size-wrapper),
+.qv-object-content-wrapper:has(.kpi-size-wrapper) {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* UNIVERSAL FIX: Target ANY element containing kpi-container or kpi-size-wrapper */
+/* UNIVERSAL FIX: Target specific Qlik elements containing kpi-container or kpi-size-wrapper */
+.qv-object:has(.kpi-container),
+.qv-object-wrapper:has(.kpi-container),
+.qv-grid-cell:has(.kpi-container),
+.qv-object:has(.kpi-size-wrapper),
+.qv-object-wrapper:has(.kpi-size-wrapper),
+.qv-grid-cell:has(.kpi-size-wrapper) {
+    box-sizing: border-box !important;
+}
+
+/* Force ALL direct children of Qlik wrappers to fill */
+.qv-object>*:has(.kpi-container),
+.qv-object-wrapper>*:has(.kpi-container),
+.qv-object-content>*:has(.kpi-container),
+.qv-object-content-wrapper>*:has(.kpi-container) {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* Additional aggressive fix for nested divs */
+div:has(> .kpi-size-wrapper),
+div:has(> .kpi-container) {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* ULTRA-AGGRESSIVE: Remove padding/margin from ANY element that contains our KPI */
+/* This catches any intermediate wrapper elements Qlik Sense might add */
+/* OPTIMIZED: Target specific Qlik wrappers instead of global * wildcard */
+.qv-object:has(.kpi-container),
+.qv-object-wrapper:has(.kpi-container),
+.qv-grid-cell:has(.kpi-container),
+.qv-object:has(.kpi-size-wrapper),
+.qv-object-wrapper:has(.kpi-size-wrapper),
+.qv-grid-cell:has(.kpi-size-wrapper) {
+    box-sizing: border-box !important;
+}
+
+/* Remove padding/margin from direct parents of our containers */
+.kpi-size-wrapper,
+.kpi-container {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* But keep internal padding on .kpi-container for content spacing */
+.kpi-container {
+    padding: 20px !important;
+    /* Internal padding for content, not external spacing */
+}
+
+/* ============================================
+   VALUE PREFIX & SUFFIX
+   ============================================ */
+.val-prefix,
+.val-suffix {
+    font-weight: 400;
+    opacity: 0.72;
+    white-space: nowrap;
+    vertical-align: baseline;
+    transition: font-size 0.3s ease, opacity 0.3s ease;
+}
+
+.val-prefix {
+    margin-right: 0.15em;
+}
+
+.val-suffix {
+    margin-left: 0.15em;
+}
+
+/* Main value prefix/suffix inherit font-size from parent */
+.main-value .val-prefix,
+.main-value .val-suffix {
+    font-size: 0.65em;
+}
+
+/* Comparison prefix/suffix stay proportional */
+.comp-value .val-prefix,
+.comp-value .val-suffix {
+    font-size: 0.75em;
+}
+
+/* Inner span for count-up animation target */
+.main-val-num {
+    display: inline;
+}
+
+/* ============================================
+   ERROR BOUNDARY STATE
+   ============================================ */
+.kpi-error-state {
+    text-align: center;
+    opacity: 0.85;
+}
+
+.kpi-error-icon {
+    font-size: 28px;
+    line-height: 1;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.kpi-error-msg {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.kpi-error-detail {
+    font-size: 10px;
+    font-weight: 400;
+    color: #999;
+    display: block;
+    max-width: 90%;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+/* ============================================
+   CHART VALUE LABELS
+   ============================================ */
+.mini-chart-value-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 100%;
+    padding: 1px 0 0 0;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    line-height: 1.2;
+    opacity: 0.8;
+}
+
+.mini-chart-value-label {
+    flex: 1 1 0;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    padding: 0 1px;
+    font-weight: 500;
+}
+
+/* ============================================
+   CLICK ACTION / NAVIGATION
+   ============================================ */
+.kpi-container.kpi-clickable {
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.kpi-container.kpi-clickable:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+}
+
+.kpi-container.kpi-clickable:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
