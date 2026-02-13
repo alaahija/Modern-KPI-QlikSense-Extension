@@ -881,9 +881,9 @@
     gap: 6px;
     flex-shrink: 1;
     flex-grow: 0;
-    margin-top: 4px !important;
+    margin-top: 8px !important;
     padding-top: 0 !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 8px !important;
     min-height: 0;
 }
 
@@ -905,7 +905,7 @@
     text-align: center;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: flex-start !important;
+    justify-content: center !important;
     align-items: center !important;
     min-width: 0;
     align-self: stretch !important;
