@@ -39,7 +39,7 @@ Visual context with trend lines and dynamic background colors that react to your
  | **Conditional Styling** | Set colors for backgrounds, values, and text dynamically using powerful Qlik expressions. |
  | **Advanced Formatting** | Full control over number formats including **K/M/B** scaling, **Currency**, **Percentage**, and **Duration** (e.g., `123:45:00`). |
  | **Interactions** | Click actions to navigate to other sheets or open external URLs. |
- | **Export Ready** | Fully supports native **Snapshots**, **Stories**, and **Export to Image/PDF** features. |
+ 
 
 ---
 
