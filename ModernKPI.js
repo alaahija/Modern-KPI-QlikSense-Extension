@@ -2311,527 +2311,528 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                         }
                     }
                 }
-            },
+            }
+        },
 
-            // ============================================
-            // PAINT FUNCTION - MAIN RENDER
-            // ============================================
-            // Store backendApi when extension is initialized
-            // This is called by Qlik Sense when the extension is created
-            // Note: backendApi is provided by Qlik Sense, not defined by us
+        // ============================================
+        // PAINT FUNCTION - MAIN RENDER
+        // ============================================
+        // Store backendApi when extension is initialized
+        // This is called by Qlik Sense when the extension is created
+        // Note: backendApi is provided by Qlik Sense, not defined by us
 
-            paint: function ($element, layout) {
-                // CRITICAL: Ensure root $element fills 100% width and height
-                // This is the root div that Qlik Sense passes to the extension
-                $element.css({
-                    'width': '100%',
-                    'height': '100%',
-                    'margin': '0',
-                    'padding': '0',
-                    'box-sizing': 'border-box',
-                    'min-width': '0',
-                    'min-height': '0',
-                    'max-width': 'none',
-                    'max-height': 'none',
-                    'display': 'block',
-                    'position': 'relative'
-                });
+        paint: function ($element, layout) {
+            // CRITICAL: Ensure root $element fills 100% width and height
+            // This is the root div that Qlik Sense passes to the extension
+            $element.css({
+                'width': '100%',
+                'height': '100%',
+                'margin': '0',
+                'padding': '0',
+                'box-sizing': 'border-box',
+                'min-width': '0',
+                'min-height': '0',
+                'max-width': 'none',
+                'max-height': 'none',
+                'display': 'block',
+                'position': 'relative'
+            });
 
-                try {
-                    // Store backendApi reference if available (Qlik Sense provides this)
-                    if (this.backendApi && !$element.data("backendApi")) {
-                        $element.data("backendApi", this.backendApi);
-                    }
+            try {
+                // Store backendApi reference if available (Qlik Sense provides this)
+                if (this.backendApi && !$element.data("backendApi")) {
+                    $element.data("backendApi", this.backendApi);
+                }
 
-                    // Handle native Qlik Sense General settings (Show hover menu, Show titles, Show details)
-                    // Check if hover menu should be hidden
-                    // Qlik Sense stores this in layout.qMeta.showHoverMenu (boolean)
-                    // Default is true (show menu), so we hide only when explicitly false
-                    const showHoverMenu = layout.qMeta?.showHoverMenu !== false;
-                    if (layout.qMeta?.showHoverMenu === false) {
-                        // Add class to hide hover menu when explicitly disabled
-                        $element.addClass('kpi-hide-hover-menu');
-                        // Also add to parent Qlik containers for CSS targeting
-                        $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').addClass('kpi-hide-hover-menu');
-                    } else {
-                        // Remove class if menu should be shown (default behavior)
-                        $element.removeClass('kpi-hide-hover-menu');
-                        $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').removeClass('kpi-hide-hover-menu');
-                    }
-                    // Clear previous tooltip
-                    $(".kpi-tooltip").remove();
+                // Handle native Qlik Sense General settings (Show hover menu, Show titles, Show details)
+                // Check if hover menu should be hidden
+                // Qlik Sense stores this in layout.qMeta.showHoverMenu (boolean)
+                // Default is true (show menu), so we hide only when explicitly false
+                const showHoverMenu = layout.qMeta?.showHoverMenu !== false;
+                if (layout.qMeta?.showHoverMenu === false) {
+                    // Add class to hide hover menu when explicitly disabled
+                    $element.addClass('kpi-hide-hover-menu');
+                    // Also add to parent Qlik containers for CSS targeting
+                    $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').addClass('kpi-hide-hover-menu');
+                } else {
+                    // Remove class if menu should be shown (default behavior)
+                    $element.removeClass('kpi-hide-hover-menu');
+                    $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').removeClass('kpi-hide-hover-menu');
+                }
+                // Clear previous tooltip
+                $(".kpi-tooltip").remove();
 
 
-                    // Check if measures are defined - if not, show empty state
-                    const cube = layout.qHyperCube;
-                    const hasMeasures = cube && cube.qMeasureInfo && cube.qMeasureInfo.length > 0;
-                    const hasDimensions = cube && cube.qDimensionInfo && cube.qDimensionInfo.length > 0;
+                // Check if measures are defined - if not, show empty state
+                const cube = layout.qHyperCube;
+                const hasMeasures = cube && cube.qMeasureInfo && cube.qMeasureInfo.length > 0;
+                const hasDimensions = cube && cube.qDimensionInfo && cube.qDimensionInfo.length > 0;
 
-                    // If no measures defined, show empty state
-                    if (!hasMeasures) {
-                        // Remove any Qlik wrapper styling and ensure white background
-                        $element.closest('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').css({
-                            'background': 'transparent',
-                            'border': 'none',
-                            'padding': '0',
-                            'margin': '0',
-                            'box-shadow': 'none',
-                            'width': '100%',
-                            'height': '100%',
-                            'box-sizing': 'border-box'
-                        });
+                // If no measures defined, show empty state
+                if (!hasMeasures) {
+                    // Remove any Qlik wrapper styling and ensure white background
+                    $element.closest('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').css({
+                        'background': 'transparent',
+                        'border': 'none',
+                        'padding': '0',
+                        'margin': '0',
+                        'box-shadow': 'none',
+                        'width': '100%',
+                        'height': '100%',
+                        'box-sizing': 'border-box'
+                    });
 
-                        $element.html(`
+                    $element.html(`
                     <div style="padding:40px;text-align:center;color:#999;display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%;background:white;border:none;box-shadow:none;box-sizing:border-box;">
                         <div style="font-size:48px;margin-bottom:16px;opacity:0.3;font-weight:bold;color:#999;">#1</div>
                         <div style="font-size:14px;color:#666;">Choose measures to display</div>
                     </div>
                 `);
-                        return qlik.Promise.resolve();
-                    }
+                    return qlik.Promise.resolve();
+                }
 
-                    // Check if we have data pages - if not, show loading skeleton
-                    if (!cube.qDataPages || cube.qDataPages.length === 0 ||
-                        !cube.qDataPages[0] || !cube.qDataPages[0].qMatrix) {
-                        // Show a shimmer skeleton that mirrors the real card layout
-                        var skelBg = fixColor(layout.props.bgColor, "#ffffff");
-                        var skelBg2 = layout.props.enableGradient ? fixColor(layout.props.bgColor2, "#667eea") : skelBg;
-                        var skelDir = layout.props.gradientDirection || "to right";
-                        var skelBackground = layout.props.enableGradient
-                            ? 'linear-gradient(' + skelDir + ', ' + skelBg + ', ' + skelBg2 + ')'
-                            : skelBg;
-                        var skelRadius = layout.props.borderRadius || 5;
-                        var skelMode = layout.props.bottomSectionMode || "comparison";
-                        var skelShowComps = (skelMode === "comparison" || skelMode === "both") && (layout.props.enableLeft !== false || layout.props.enableRight !== false);
-                        var skelShowChart = skelMode === "chart" || skelMode === "both";
-                        var skelHasComps = skelShowComps;
-                        $element.html(
-                            '<div class="kpi-size-wrapper">' +
-                            '<div class="kpi-container kpi-skeleton" style="border-radius:' + skelRadius + 'px;background:' + skelBackground + ';">' +
+                // Check if we have data pages - if not, show loading skeleton
+                if (!cube.qDataPages || cube.qDataPages.length === 0 ||
+                    !cube.qDataPages[0] || !cube.qDataPages[0].qMatrix) {
+                    // Show a shimmer skeleton that mirrors the real card layout
+                    var skelBg = fixColor(layout.props.bgColor, "#ffffff");
+                    var skelBg2 = layout.props.enableGradient ? fixColor(layout.props.bgColor2, "#667eea") : skelBg;
+                    var skelDir = layout.props.gradientDirection || "to right";
+                    var skelBackground = layout.props.enableGradient
+                        ? 'linear-gradient(' + skelDir + ', ' + skelBg + ', ' + skelBg2 + ')'
+                        : skelBg;
+                    var skelRadius = layout.props.borderRadius || 5;
+                    var skelMode = layout.props.bottomSectionMode || "comparison";
+                    var skelShowComps = (skelMode === "comparison" || skelMode === "both") && (layout.props.enableLeft !== false || layout.props.enableRight !== false);
+                    var skelShowChart = skelMode === "chart" || skelMode === "both";
+                    var skelHasComps = skelShowComps;
+                    $element.html(
+                        '<div class="kpi-size-wrapper">' +
+                        '<div class="kpi-container kpi-skeleton" style="border-radius:' + skelRadius + 'px;background:' + skelBackground + ';">' +
+                        '<div>' +
+                        '<div class="kpi-skeleton-bar kpi-skeleton-title"></div>' +
+                        '<div class="kpi-skeleton-bar kpi-skeleton-value"></div>' +
+                        '</div>' +
+                        (skelShowChart ?
+                            '<div class="kpi-skeleton-bar kpi-skeleton-chart"></div>'
+                            : '') +
+                        (skelHasComps ?
                             '<div>' +
-                            '<div class="kpi-skeleton-bar kpi-skeleton-title"></div>' +
-                            '<div class="kpi-skeleton-bar kpi-skeleton-value"></div>' +
-                            '</div>' +
-                            (skelShowChart ?
-                                '<div class="kpi-skeleton-bar kpi-skeleton-chart"></div>'
-                                : '') +
-                            (skelHasComps ?
-                                '<div>' +
-                                '<div class="kpi-skeleton-bar kpi-skeleton-divider"></div>' +
-                                '<div class="kpi-skeleton-comps">' +
-                                '<div class="kpi-skeleton-comp"><div class="kpi-skeleton-bar kpi-skeleton-comp-title"></div><div class="kpi-skeleton-bar kpi-skeleton-comp-value"></div></div>' +
-                                '<div class="kpi-skeleton-comp"><div class="kpi-skeleton-bar kpi-skeleton-comp-title"></div><div class="kpi-skeleton-bar kpi-skeleton-comp-value"></div></div>' +
-                                '</div>' +
-                                '</div>'
-                                : '') +
+                            '<div class="kpi-skeleton-bar kpi-skeleton-divider"></div>' +
+                            '<div class="kpi-skeleton-comps">' +
+                            '<div class="kpi-skeleton-comp"><div class="kpi-skeleton-bar kpi-skeleton-comp-title"></div><div class="kpi-skeleton-bar kpi-skeleton-comp-value"></div></div>' +
+                            '<div class="kpi-skeleton-comp"><div class="kpi-skeleton-bar kpi-skeleton-comp-title"></div><div class="kpi-skeleton-bar kpi-skeleton-comp-value"></div></div>' +
                             '</div>' +
                             '</div>'
-                        );
-                        return qlik.Promise.resolve();
-                    }
+                            : '') +
+                        '</div>' +
+                        '</div>'
+                    );
+                    return qlik.Promise.resolve();
+                }
 
-                    const page = cube.qDataPages[0];
+                const page = cube.qDataPages[0];
 
-                    let matrix = page.qMatrix || [];
-                    // Check if dimension exists in hypercube (user adds it via Qlik's dimension panel)
-                    const hasDim = cube.qDimensionInfo && cube.qDimensionInfo.length > 0;
+                let matrix = page.qMatrix || [];
+                // Check if dimension exists in hypercube (user adds it via Qlik's dimension panel)
+                const hasDim = cube.qDimensionInfo && cube.qDimensionInfo.length > 0;
 
-                    // ============================================
-                    // DATA PAGINATION: Fetch more rows if needed for mini chart
-                    // When a dimension is present, the engine may return fewer rows than available.
-                    // Request up to 500 rows so the chart renders all dimension values.
-                    // ============================================
-                    const earlyMode = layout.props.bottomSectionMode || "comparison";
-                    const needsMoreData = (earlyMode === "chart" || earlyMode === "both") && hasDim;
-                    const totalRows = cube.qSize ? cube.qSize.qcy : 0;
-                    const maxFetchRows = 500;
+                // ============================================
+                // DATA PAGINATION: Fetch more rows if needed for mini chart
+                // When a dimension is present, the engine may return fewer rows than available.
+                // Request up to 500 rows so the chart renders all dimension values.
+                // ============================================
+                const earlyMode = layout.props.bottomSectionMode || "comparison";
+                const needsMoreData = (earlyMode === "chart" || earlyMode === "both") && hasDim;
+                const totalRows = cube.qSize ? cube.qSize.qcy : 0;
+                const maxFetchRows = 500;
 
-                    if (needsMoreData && matrix.length < Math.min(totalRows, maxFetchRows) && this.backendApi) {
-                        var self = this;
-                        var requestPage = [{
-                            qTop: 0,
-                            qLeft: 0,
-                            qWidth: cube.qSize.qcx,
-                            qHeight: Math.min(totalRows, maxFetchRows)
-                        }];
-                        return this.backendApi.getData(requestPage).then(function (dataPages) {
-                            if (dataPages && dataPages.length > 0 && dataPages[0].qMatrix) {
-                                layout.qHyperCube.qDataPages = dataPages;
-                            }
-                            return self.paint($element, layout);
-                        });
-                    }
+                if (needsMoreData && matrix.length < Math.min(totalRows, maxFetchRows) && this.backendApi) {
+                    var self = this;
+                    var requestPage = [{
+                        qTop: 0,
+                        qLeft: 0,
+                        qWidth: cube.qSize.qcx,
+                        qHeight: Math.min(totalRows, maxFetchRows)
+                    }];
+                    return this.backendApi.getData(requestPage).then(function (dataPages) {
+                        if (dataPages && dataPages.length > 0 && dataPages[0].qMatrix) {
+                            layout.qHyperCube.qDataPages = dataPages;
+                        }
+                        return self.paint($element, layout);
+                    });
+                }
 
-                    // Column index mapping
-                    // If dimension is in props but not yet in hypercube, we'll handle it differently
-                    const colDim = (cube.qDimensionInfo && cube.qDimensionInfo.length > 0) ? 0 : null;
-                    const colMain = hasDim ? 1 : 0;
-                    const colChart = hasDim ? 2 : 1;
-                    const colLeft = hasDim ? 3 : 2;
-                    const colRight = hasDim ? 4 : 3;
-                    const colThird = hasDim ? 5 : 4;
-                    // X-axis measure column (if enabled and measure is defined)
-                    const hasXAxisMeasure = layout.props.showXAxis && layout.props.xAxisMeasure;
-                    const colXAxis = hasDim ? (hasXAxisMeasure ? 6 : null) : (hasXAxisMeasure ? 5 : null);
-                    // Second series column (qMeasures index 6)
-                    const hasSecondSeries = layout.props.enableSecondSeries === true;
-                    const colSecondSeries = hasSecondSeries ? (hasDim ? 7 : 6) : null;
+                // Column index mapping
+                // If dimension is in props but not yet in hypercube, we'll handle it differently
+                const colDim = (cube.qDimensionInfo && cube.qDimensionInfo.length > 0) ? 0 : null;
+                const colMain = hasDim ? 1 : 0;
+                const colChart = hasDim ? 2 : 1;
+                const colLeft = hasDim ? 3 : 2;
+                const colRight = hasDim ? 4 : 3;
+                const colThird = hasDim ? 5 : 4;
+                // X-axis measure column (if enabled and measure is defined)
+                const hasXAxisMeasure = layout.props.showXAxis && layout.props.xAxisMeasure;
+                const colXAxis = hasDim ? (hasXAxisMeasure ? 6 : null) : (hasXAxisMeasure ? 5 : null);
+                // Second series column (qMeasures index 6)
+                const hasSecondSeries = layout.props.enableSecondSeries === true;
+                const colSecondSeries = hasSecondSeries ? (hasDim ? 7 : 6) : null;
 
-                    // ============================================
-                    // SORTING
-                    // ============================================
-                    if (layout.props.enableChartSort && matrix.length > 1) {
-                        const sortBy = layout.props.chartSortBy || "dimension";
-                        const orderFactor = layout.props.chartSortOrder === "desc" ? -1 : 1;
+                // ============================================
+                // SORTING
+                // ============================================
+                if (layout.props.enableChartSort && matrix.length > 1) {
+                    const sortBy = layout.props.chartSortBy || "dimension";
+                    const orderFactor = layout.props.chartSortOrder === "desc" ? -1 : 1;
 
-                        matrix = matrix.slice().sort((rowA, rowB) => {
-                            let vA, vB;
+                    matrix = matrix.slice().sort((rowA, rowB) => {
+                        let vA, vB;
 
-                            if (sortBy === "dimension" && hasDim) {
+                        if (sortBy === "dimension" && hasDim) {
+                            const cA = rowA[0], cB = rowB[0];
+                            vA = !isNaN(cA?.qNum) ? cA.qNum : (cA?.qText || "");
+                            vB = !isNaN(cB?.qNum) ? cB.qNum : (cB?.qText || "");
+                        } else if (sortBy === "measure") {
+                            vA = rowA[colChart]?.qNum;
+                            vB = rowB[colChart]?.qNum;
+                        } else if (sortBy === "expression") {
+                            const expr = (layout.props.chartSortExpression || "").trim().toLowerCase();
+                            if (expr === "0" || expr === "dim") {
                                 const cA = rowA[0], cB = rowB[0];
-                                vA = !isNaN(cA?.qNum) ? cA.qNum : (cA?.qText || "");
-                                vB = !isNaN(cB?.qNum) ? cB.qNum : (cB?.qText || "");
-                            } else if (sortBy === "measure") {
+                                vA = cA?.qNum ?? cA?.qText ?? "";
+                                vB = cB?.qNum ?? cB?.qText ?? "";
+                            } else if (expr === "1" || expr === "chart") {
                                 vA = rowA[colChart]?.qNum;
                                 vB = rowB[colChart]?.qNum;
-                            } else if (sortBy === "expression") {
-                                const expr = (layout.props.chartSortExpression || "").trim().toLowerCase();
-                                if (expr === "0" || expr === "dim") {
-                                    const cA = rowA[0], cB = rowB[0];
-                                    vA = cA?.qNum ?? cA?.qText ?? "";
-                                    vB = cB?.qNum ?? cB?.qText ?? "";
-                                } else if (expr === "1" || expr === "chart") {
-                                    vA = rowA[colChart]?.qNum;
-                                    vB = rowB[colChart]?.qNum;
-                                } else {
-                                    return 0;
-                                }
                             } else {
                                 return 0;
                             }
+                        } else {
+                            return 0;
+                        }
 
-                            if (vA == null && vB == null) return 0;
-                            if (vA == null) return -1 * orderFactor;
-                            if (vB == null) return 1 * orderFactor;
+                        if (vA == null && vB == null) return 0;
+                        if (vA == null) return -1 * orderFactor;
+                        if (vB == null) return 1 * orderFactor;
 
-                            if (!isNaN(+vA) && !isNaN(+vB)) return (+vA - +vB) * orderFactor;
+                        if (!isNaN(+vA) && !isNaN(+vB)) return (+vA - +vB) * orderFactor;
 
-                            const dA = new Date(vA), dB = new Date(vB);
-                            if (!isNaN(dA.getTime()) && !isNaN(dB.getTime())) {
-                                return (dA - dB) * orderFactor;
-                            }
+                        const dA = new Date(vA), dB = new Date(vB);
+                        if (!isNaN(dA.getTime()) && !isNaN(dB.getTime())) {
+                            return (dA - dB) * orderFactor;
+                        }
 
-                            return String(vA).localeCompare(String(vB)) * orderFactor;
-                        });
+                        return String(vA).localeCompare(String(vB)) * orderFactor;
+                    });
+                }
+
+                // ============================================
+                // EXTRACT VALUES
+                // ============================================
+                /**
+                 * Parse formatted number string (e.g., "0.0%", "1,234.56", "-5.2%")
+                 * Returns numeric value or null if parsing fails
+                 * Handles Qlik Sense formatted values including percentages
+                 */
+                function parseFormattedNumber(str) {
+                    if (!str) return null;
+
+                    // Convert to string if not already
+                    const originalStr = String(str).trim();
+                    if (originalStr === "" || originalStr === "-" || originalStr === "—" || originalStr === "null" || originalStr === "undefined") {
+                        return null;
                     }
 
-                    // ============================================
-                    // EXTRACT VALUES
-                    // ============================================
-                    /**
-                     * Parse formatted number string (e.g., "0.0%", "1,234.56", "-5.2%")
-                     * Returns numeric value or null if parsing fails
-                     * Handles Qlik Sense formatted values including percentages
-                     */
-                    function parseFormattedNumber(str) {
-                        if (!str) return null;
+                    // Check if it's a percentage
+                    const isPercent = originalStr.includes('%');
 
-                        // Convert to string if not already
-                        const originalStr = String(str).trim();
-                        if (originalStr === "" || originalStr === "-" || originalStr === "—" || originalStr === "null" || originalStr === "undefined") {
-                            return null;
-                        }
+                    // Remove common formatting characters (commas, spaces, currency symbols, percent sign)
+                    // But preserve the minus sign and decimal point
+                    let cleaned = originalStr
+                        .replace(/,/g, '')  // Remove thousand separators
+                        .replace(/\s/g, '')  // Remove spaces
+                        .replace(/%/g, '')  // Remove percent sign
+                        .replace(/[^\d.\-+]/g, ''); // Keep only digits, dots, minus, plus
 
-                        // Check if it's a percentage
-                        const isPercent = originalStr.includes('%');
+                    // Handle empty string after cleaning
+                    if (cleaned === "" || cleaned === "-" || cleaned === "+") {
+                        return null;
+                    }
 
-                        // Remove common formatting characters (commas, spaces, currency symbols, percent sign)
-                        // But preserve the minus sign and decimal point
-                        let cleaned = originalStr
-                            .replace(/,/g, '')  // Remove thousand separators
-                            .replace(/\s/g, '')  // Remove spaces
-                            .replace(/%/g, '')  // Remove percent sign
-                            .replace(/[^\d.\-+]/g, ''); // Keep only digits, dots, minus, plus
+                    // Try to parse as float
+                    const num = parseFloat(cleaned);
+                    if (isNaN(num)) {
+                        return null;
+                    }
 
-                        // Handle empty string after cleaning
-                        if (cleaned === "" || cleaned === "-" || cleaned === "+") {
-                            return null;
-                        }
-
-                        // Try to parse as float
-                        const num = parseFloat(cleaned);
-                        if (isNaN(num)) {
-                            return null;
-                        }
-
-                        // Handle percentage values
-                        // When NUM() formats a value with '%', it displays as percentage string
-                        // Example: value 0.05 displays as "5.0%", value -0.1 displays as "-10.0%"
-                        // But the actual stored value in qNum should be the decimal (0.05, -0.1)
-                        // If we're parsing from qText, we need to convert back
-                        if (isPercent) {
-                            // If absolute value is > 1, it's in percentage form (5% = 5), convert to decimal
-                            // If absolute value is <= 1, it might already be in decimal form, but since NUM() 
-                            // with '%' format typically shows percentages > 1, we'll convert if > 1
-                            if (Math.abs(num) > 1 || Math.abs(num) === 1) {
-                                return num / 100;
-                            }
-                            // For values between -1 and 1 (excluding -1 and 1), keep as decimal
-                            // This handles cases like "0.5%" which should be 0.005
+                    // Handle percentage values
+                    // When NUM() formats a value with '%', it displays as percentage string
+                    // Example: value 0.05 displays as "5.0%", value -0.1 displays as "-10.0%"
+                    // But the actual stored value in qNum should be the decimal (0.05, -0.1)
+                    // If we're parsing from qText, we need to convert back
+                    if (isPercent) {
+                        // If absolute value is > 1, it's in percentage form (5% = 5), convert to decimal
+                        // If absolute value is <= 1, it might already be in decimal form, but since NUM() 
+                        // with '%' format typically shows percentages > 1, we'll convert if > 1
+                        if (Math.abs(num) > 1 || Math.abs(num) === 1) {
                             return num / 100;
                         }
-
-                        return num;
+                        // For values between -1 and 1 (excluding -1 and 1), keep as decimal
+                        // This handles cases like "0.5%" which should be 0.005
+                        return num / 100;
                     }
 
-                    function getTotal(idx, col) {
-                        // Try grand total first (more efficient)
-                        if (cube.qGrandTotalRow && cube.qGrandTotalRow[idx] !== undefined) {
-                            const cell = cube.qGrandTotalRow[idx];
+                    return num;
+                }
 
-                            if (!cell) {
-                                // Fall through to matrix check
+                function getTotal(idx, col) {
+                    // Try grand total first (more efficient)
+                    if (cube.qGrandTotalRow && cube.qGrandTotalRow[idx] !== undefined) {
+                        const cell = cube.qGrandTotalRow[idx];
+
+                        if (!cell) {
+                            // Fall through to matrix check
+                        } else {
+                            // Check for error state
+                            if (cell.qIsError !== undefined && cell.qIsError === true) {
+                                console.error(`[KPI] getTotal: Cell at index ${idx} has error. qError: ${cell.qError || 'Unknown error'}`);
+                                return 0;
+                            }
+
+                            // First try qNum (numeric value)
+                            if (cell.qNum !== undefined && cell.qNum !== null && typeof cell.qNum === "number" && !isNaN(cell.qNum)) {
+                                return cell.qNum;
+                            }
+
+                            // If qNum is not available or invalid, try qText (formatted string)
+                            if (cell.qText !== undefined && cell.qText !== null && cell.qText !== "") {
+                                const parsed = parseFormattedNumber(String(cell.qText));
+                                if (parsed !== null) {
+                                    return parsed;
+                                }
+                                // silently ignore
                             } else {
-                                // Check for error state
-                                if (cell.qIsError !== undefined && cell.qIsError === true) {
-                                    console.error(`[KPI] getTotal: Cell at index ${idx} has error. qError: ${cell.qError || 'Unknown error'}`);
-                                    return 0;
-                                }
-
-                                // First try qNum (numeric value)
-                                if (cell.qNum !== undefined && cell.qNum !== null && typeof cell.qNum === "number" && !isNaN(cell.qNum)) {
-                                    return cell.qNum;
-                                }
-
-                                // If qNum is not available or invalid, try qText (formatted string)
-                                if (cell.qText !== undefined && cell.qText !== null && cell.qText !== "") {
-                                    const parsed = parseFormattedNumber(String(cell.qText));
-                                    if (parsed !== null) {
-                                        return parsed;
-                                    }
-                                    // silently ignore
-                                } else {
-                                    // silently ignore
-                                }
+                                // silently ignore
                             }
                         }
+                    }
 
-                        // Fallback to matrix rows
-                        // For KPI measures, we typically want the single value, not a sum
-                        // But if there are multiple rows, we'll sum them
-                        if (matrix && matrix.length > 0 && col !== null && col !== undefined) {
-                            // For single row, just return that value (common for KPIs)
-                            if (matrix.length === 1 && matrix[0] && matrix[0][col]) {
-                                const cell = matrix[0][col];
+                    // Fallback to matrix rows
+                    // For KPI measures, we typically want the single value, not a sum
+                    // But if there are multiple rows, we'll sum them
+                    if (matrix && matrix.length > 0 && col !== null && col !== undefined) {
+                        // For single row, just return that value (common for KPIs)
+                        if (matrix.length === 1 && matrix[0] && matrix[0][col]) {
+                            const cell = matrix[0][col];
 
-                                // Check for error state
-                                if (cell.qIsError !== undefined && cell.qIsError === true) {
-                                    console.error(`[KPI] getTotal: Cell at column ${col} has error. qError: ${cell.qError || 'Unknown error'}`);
-                                    return 0;
+                            // Check for error state
+                            if (cell.qIsError !== undefined && cell.qIsError === true) {
+                                console.error(`[KPI] getTotal: Cell at column ${col} has error. qError: ${cell.qError || 'Unknown error'}`);
+                                return 0;
+                            }
+
+                            // First try qNum (numeric value)
+                            if (cell.qNum !== undefined && cell.qNum !== null && typeof cell.qNum === "number" && !isNaN(cell.qNum)) {
+                                return cell.qNum;
+                            }
+
+                            // If qNum is not available or invalid, try qText (formatted string)
+                            if (cell.qText !== undefined && cell.qText !== null && cell.qText !== "") {
+                                const parsed = parseFormattedNumber(String(cell.qText));
+                                if (parsed !== null) {
+                                    return parsed;
                                 }
-
-                                // First try qNum (numeric value)
-                                if (cell.qNum !== undefined && cell.qNum !== null && typeof cell.qNum === "number" && !isNaN(cell.qNum)) {
-                                    return cell.qNum;
-                                }
-
-                                // If qNum is not available or invalid, try qText (formatted string)
-                                if (cell.qText !== undefined && cell.qText !== null && cell.qText !== "") {
-                                    const parsed = parseFormattedNumber(String(cell.qText));
-                                    if (parsed !== null) {
-                                        return parsed;
-                                    }
-                                    // silently ignore
-                                } else {
-                                    // silently ignore
-                                }
+                                // silently ignore
                             } else {
-                                // Multiple rows - sum them
-                                let hasValidData = false;
-                                const result = matrix.reduce((acc, row) => {
-                                    if (row && row[col]) {
-                                        const cell = row[col];
-
-                                        // Check for error state
-                                        if (cell.qIsError !== undefined && cell.qIsError === true) {
-                                            console.error(`[KPI] getTotal: Cell at column ${col} has error. qError: ${cell.qError || 'Unknown error'}`);
-                                            return acc;
-                                        }
-
-                                        // First try qNum (numeric value)
-                                        if (cell.qNum !== undefined && cell.qNum !== null && typeof cell.qNum === "number" && !isNaN(cell.qNum)) {
-                                            hasValidData = true;
-                                            return acc + cell.qNum;
-                                        }
-
-                                        // If qNum is not available or invalid, try qText (formatted string)
-                                        if (cell.qText !== undefined && cell.qText !== null && cell.qText !== "") {
-                                            const parsed = parseFormattedNumber(String(cell.qText));
-                                            if (parsed !== null) {
-                                                hasValidData = true;
-                                                return acc + parsed;
-                                            }
-                                        }
-                                    }
-                                    return acc;
-                                }, 0);
-
-                                if (hasValidData) {
-                                    return result;
-                                } else {
-                                    // silently ignore
-                                }
+                                // silently ignore
                             }
                         } else {
-                            // silently ignore
-                        }
+                            // Multiple rows - sum them
+                            let hasValidData = false;
+                            const result = matrix.reduce((acc, row) => {
+                                if (row && row[col]) {
+                                    const cell = row[col];
 
-                        // Return 0 if no data available
-                        return 0;
+                                    // Check for error state
+                                    if (cell.qIsError !== undefined && cell.qIsError === true) {
+                                        console.error(`[KPI] getTotal: Cell at column ${col} has error. qError: ${cell.qError || 'Unknown error'}`);
+                                        return acc;
+                                    }
+
+                                    // First try qNum (numeric value)
+                                    if (cell.qNum !== undefined && cell.qNum !== null && typeof cell.qNum === "number" && !isNaN(cell.qNum)) {
+                                        hasValidData = true;
+                                        return acc + cell.qNum;
+                                    }
+
+                                    // If qNum is not available or invalid, try qText (formatted string)
+                                    if (cell.qText !== undefined && cell.qText !== null && cell.qText !== "") {
+                                        const parsed = parseFormattedNumber(String(cell.qText));
+                                        if (parsed !== null) {
+                                            hasValidData = true;
+                                            return acc + parsed;
+                                        }
+                                    }
+                                }
+                                return acc;
+                            }, 0);
+
+                            if (hasValidData) {
+                                return result;
+                            } else {
+                                // silently ignore
+                            }
+                        }
+                    } else {
+                        // silently ignore
                     }
 
-                    // Get numeric values for arrows/comparisons (still need qNum for logic)
-                    const mainVal = getTotal(0, colMain);
-                    const leftVal = layout.props.enableLeft !== false ? getTotal(2, colLeft) : null;
-                    const rightVal = layout.props.enableRight !== false ? getTotal(3, colRight) : null;
-                    const thirdVal = layout.props.enableThird === true ? getTotal(4, colThird) : null;
+                    // Return 0 if no data available
+                    return 0;
+                }
 
-                    // ============================================
-                    // FORMAT VALUES
-                    // ============================================
-                    // Helper function to get formatted value - use qText if "measure" format, otherwise use formatNumber
-                    function getFormattedValueForDisplay(val, formatType, currencySymbol, customMask, cell, measureInfo, durationPattern) {
-                        // "measure" — always use Qlik's native formatting
-                        if (formatType === "measure" && cell) {
-                            if (cell.qText !== undefined && cell.qText !== null && cell.qText !== "") {
+                // Get numeric values for arrows/comparisons (still need qNum for logic)
+                const mainVal = getTotal(0, colMain);
+                const leftVal = layout.props.enableLeft !== false ? getTotal(2, colLeft) : null;
+                const rightVal = layout.props.enableRight !== false ? getTotal(3, colRight) : null;
+                const thirdVal = layout.props.enableThird === true ? getTotal(4, colThird) : null;
+
+                // ============================================
+                // FORMAT VALUES
+                // ============================================
+                // Helper function to get formatted value - use qText if "measure" format, otherwise use formatNumber
+                function getFormattedValueForDisplay(val, formatType, currencySymbol, customMask, cell, measureInfo, durationPattern) {
+                    // "measure" — always use Qlik's native formatting
+                    if (formatType === "measure" && cell) {
+                        if (cell.qText !== undefined && cell.qText !== null && cell.qText !== "") {
+                            return cell.qText;
+                        }
+                    }
+
+                    // "duration" — explicit duration format chosen by user
+                    if (formatType === "duration") {
+                        var pattern = durationPattern || "h:mm:ss";
+                        return formatAsDuration(typeof val === "number" ? val : parseFloat(val), pattern);
+                    }
+
+                    // "auto" / "U" — try Qlik's native formatting first.
+                    if (!formatType || formatType === "auto" || formatType === "U") {
+                        // Check if the measure has a specific format type set natively
+                        if (measureInfo && measureInfo.qNumFormat) {
+                            const qType = measureInfo.qNumFormat.qType;
+                            const qFmt = measureInfo.qNumFormat.qFmt || "";
+
+                            // If Qlik has a specific format type (not "U" undefined), use qText
+                            // Types: R=real, F=fixed, M=money, D=date, T=time, TS=timestamp, IV=interval/duration
+                            if (qType && qType !== "U" && cell && cell.qText) {
                                 return cell.qText;
                             }
-                        }
 
-                        // "duration" — explicit duration format chosen by user
-                        if (formatType === "duration") {
-                            var pattern = durationPattern || "h:mm:ss";
-                            return formatAsDuration(typeof val === "number" ? val : parseFloat(val), pattern);
-                        }
-
-                        // "auto" / "U" — try Qlik's native formatting first.
-                        if (!formatType || formatType === "auto" || formatType === "U") {
-                            // Check if the measure has a specific format type set natively
-                            if (measureInfo && measureInfo.qNumFormat) {
-                                const qType = measureInfo.qNumFormat.qType;
-                                const qFmt = measureInfo.qNumFormat.qFmt || "";
-
-                                // If Qlik has a specific format type (not "U" undefined), use qText
-                                // Types: R=real, F=fixed, M=money, D=date, T=time, TS=timestamp, IV=interval/duration
-                                if (qType && qType !== "U" && cell && cell.qText) {
-                                    return cell.qText;
-                                }
-
-                                // If the format pattern is a time/duration pattern, format it ourselves
-                                if (qFmt && isTimePattern(qFmt)) {
-                                    return formatAsDuration(val, qFmt);
-                                }
-                            }
-
-                            // Check if qText looks like a formatted value (not just a plain number)
-                            if (cell && cell.qText !== undefined && cell.qText !== null && cell.qText !== "") {
-                                const txt = String(cell.qText).trim();
-                                const rawStr = String(val);
-                                if (txt !== rawStr && (txt.includes(':') || /[a-zA-Z]/.test(txt) || txt !== parseFloat(txt).toString())) {
-                                    return txt;
-                                }
+                            // If the format pattern is a time/duration pattern, format it ourselves
+                            if (qFmt && isTimePattern(qFmt)) {
+                                return formatAsDuration(val, qFmt);
                             }
                         }
 
-                        // Explicit format types (number, currency, percent, km, custom)
-                        return formatNumber(val, formatType, currencySymbol, customMask);
+                        // Check if qText looks like a formatted value (not just a plain number)
+                        if (cell && cell.qText !== undefined && cell.qText !== null && cell.qText !== "") {
+                            const txt = String(cell.qText).trim();
+                            const rawStr = String(val);
+                            if (txt !== rawStr && (txt.includes(':') || /[a-zA-Z]/.test(txt) || txt !== parseFloat(txt).toString())) {
+                                return txt;
+                            }
+                        }
                     }
 
-                    // Get cells for measure formatting
-                    const mainCell = (cube.qGrandTotalRow && cube.qGrandTotalRow[0]) || (matrix.length > 0 && matrix[0] && matrix[0][colMain] ? matrix[0][colMain] : null);
-                    const leftCell = layout.props.enableLeft !== false ? ((cube.qGrandTotalRow && cube.qGrandTotalRow[2]) || (matrix.length > 0 && matrix[0] && matrix[0][colLeft] ? matrix[0][colLeft] : null)) : null;
-                    const rightCell = layout.props.enableRight !== false ? ((cube.qGrandTotalRow && cube.qGrandTotalRow[3]) || (matrix.length > 0 && matrix[0] && matrix[0][colRight] ? matrix[0][colRight] : null)) : null;
-                    const thirdCell = layout.props.enableThird === true ? ((cube.qGrandTotalRow && cube.qGrandTotalRow[4]) || (matrix.length > 0 && matrix[0] && matrix[0][colThird] ? matrix[0][colThird] : null)) : null;
+                    // Explicit format types (number, currency, percent, km, custom)
+                    return formatNumber(val, formatType, currencySymbol, customMask);
+                }
 
-                    // Get measure info for native formatting (Duration, Date, Time, etc.)
-                    const measureInfoArr = cube.qMeasureInfo || [];
-                    const mainMeasureInfo = measureInfoArr[0] || null;
-                    const leftMeasureInfo = measureInfoArr[2] || null;
-                    const rightMeasureInfo = measureInfoArr[3] || null;
-                    const thirdMeasureInfo = measureInfoArr[4] || null;
+                // Get cells for measure formatting
+                const mainCell = (cube.qGrandTotalRow && cube.qGrandTotalRow[0]) || (matrix.length > 0 && matrix[0] && matrix[0][colMain] ? matrix[0][colMain] : null);
+                const leftCell = layout.props.enableLeft !== false ? ((cube.qGrandTotalRow && cube.qGrandTotalRow[2]) || (matrix.length > 0 && matrix[0] && matrix[0][colLeft] ? matrix[0][colLeft] : null)) : null;
+                const rightCell = layout.props.enableRight !== false ? ((cube.qGrandTotalRow && cube.qGrandTotalRow[3]) || (matrix.length > 0 && matrix[0] && matrix[0][colRight] ? matrix[0][colRight] : null)) : null;
+                const thirdCell = layout.props.enableThird === true ? ((cube.qGrandTotalRow && cube.qGrandTotalRow[4]) || (matrix.length > 0 && matrix[0] && matrix[0][colThird] ? matrix[0][colThird] : null)) : null;
 
-                    const mainFormatted = getFormattedValueForDisplay(mainVal, layout.props.mainFormatType, layout.props.mainCurrencySymbol, layout.props.mainCustomMask, mainCell, mainMeasureInfo, layout.props.mainDurationPattern);
-                    const leftFormatted = leftVal !== null ? getFormattedValueForDisplay(leftVal, layout.props.leftFormatType, layout.props.leftCurrencySymbol, layout.props.leftCustomMask, leftCell, leftMeasureInfo, layout.props.leftDurationPattern) : "";
-                    const rightFormatted = rightVal !== null ? getFormattedValueForDisplay(rightVal, layout.props.rightFormatType, layout.props.rightCurrencySymbol, layout.props.rightCustomMask, rightCell, rightMeasureInfo, layout.props.rightDurationPattern) : "";
-                    const thirdFormatted = thirdVal !== null ? getFormattedValueForDisplay(thirdVal, layout.props.thirdFormatType, layout.props.thirdCurrencySymbol, layout.props.thirdCustomMask, thirdCell, thirdMeasureInfo, layout.props.thirdDurationPattern) : "";
+                // Get measure info for native formatting (Duration, Date, Time, etc.)
+                const measureInfoArr = cube.qMeasureInfo || [];
+                const mainMeasureInfo = measureInfoArr[0] || null;
+                const leftMeasureInfo = measureInfoArr[2] || null;
+                const rightMeasureInfo = measureInfoArr[3] || null;
+                const thirdMeasureInfo = measureInfoArr[4] || null;
 
-                    // ============================================
-                    // BOTTOM SECTION MODE
-                    // ============================================
-                    const bottomMode = layout.props.bottomSectionMode || "comparison";
-                    const showChart = bottomMode === "chart" || bottomMode === "both";
-                    const showComparison = bottomMode === "comparison" || bottomMode === "both";
+                const mainFormatted = getFormattedValueForDisplay(mainVal, layout.props.mainFormatType, layout.props.mainCurrencySymbol, layout.props.mainCustomMask, mainCell, mainMeasureInfo, layout.props.mainDurationPattern);
+                const leftFormatted = leftVal !== null ? getFormattedValueForDisplay(leftVal, layout.props.leftFormatType, layout.props.leftCurrencySymbol, layout.props.leftCustomMask, leftCell, leftMeasureInfo, layout.props.leftDurationPattern) : "";
+                const rightFormatted = rightVal !== null ? getFormattedValueForDisplay(rightVal, layout.props.rightFormatType, layout.props.rightCurrencySymbol, layout.props.rightCustomMask, rightCell, rightMeasureInfo, layout.props.rightDurationPattern) : "";
+                const thirdFormatted = thirdVal !== null ? getFormattedValueForDisplay(thirdVal, layout.props.thirdFormatType, layout.props.thirdCurrencySymbol, layout.props.thirdCustomMask, thirdCell, thirdMeasureInfo, layout.props.thirdDurationPattern) : "";
 
-                    // ============================================
-                    // BUILD MINI CHART (only when chart mode is active)
-                    // ============================================
-                    const chartContainerWidth = $element.width() - 40; // subtract card padding
-                    const miniChartSvg = showChart ? buildMiniChart(layout, matrix, colChart, colDim, colXAxis, chartContainerWidth, colSecondSeries) : "";
+                // ============================================
+                // BOTTOM SECTION MODE
+                // ============================================
+                const bottomMode = layout.props.bottomSectionMode || "comparison";
+                const showChart = bottomMode === "chart" || bottomMode === "both";
+                const showComparison = bottomMode === "comparison" || bottomMode === "both";
 
-                    // ============================================
-                    // EXTRACT COLORS
-                    // ============================================
-                    // Conditional background color overrides static bgColor
-                    const conditionalBg = layout.props.conditionalBgColor ? fixColor(layout.props.conditionalBgColor, null) : null;
-                    const bgColor = conditionalBg || fixColor(layout.props.bgColor, "#ffffff");
-                    const textColor = fixColor(layout.props.textColor, "#222222");
+                // ============================================
+                // BUILD MINI CHART (only when chart mode is active)
+                // ============================================
+                const chartContainerWidth = $element.width() - 40; // subtract card padding
+                const miniChartSvg = showChart ? buildMiniChart(layout, matrix, colChart, colDim, colXAxis, chartContainerWidth, colSecondSeries) : "";
 
-                    // Resolve main value color: explicit pick → auto-contrast → textColor fallback
-                    const mainValueColor = getValueColor(layout.props.mainValueColor, textColor, layout.props.autoContrast, bgColor);
+                // ============================================
+                // EXTRACT COLORS
+                // ============================================
+                // Conditional background color overrides static bgColor
+                const conditionalBg = layout.props.conditionalBgColor ? fixColor(layout.props.conditionalBgColor, null) : null;
+                const bgColor = conditionalBg || fixColor(layout.props.bgColor, "#ffffff");
+                const textColor = fixColor(layout.props.textColor, "#222222");
 
-                    const borderColor = fixColor(layout.props.borderColor, "#e0e0e0");
-                    const dividerHColor = fixColor(layout.props.dividerHColor, "#ececec");
-                    const dividerVColor = fixColor(layout.props.dividerVColor, "#ebebeb");
+                // Resolve main value color: explicit pick → auto-contrast → textColor fallback
+                const mainValueColor = getValueColor(layout.props.mainValueColor, textColor, layout.props.autoContrast, bgColor);
 
-                    // ============================================
-                    // BUILD STYLES
-                    // ============================================
-                    // Build background (solid or gradient)
-                    const isGradient = layout.props.enableGradient === true;
-                    const bgColor2 = isGradient ? fixColor(layout.props.bgColor2, "#667eea") : bgColor;
-                    const gradientDir = layout.props.gradientDirection || "to right";
-                    const cardBackground = isGradient
-                        ? `linear-gradient(${gradientDir}, ${bgColor}, ${bgColor2})`
-                        : bgColor;
+                const borderColor = fixColor(layout.props.borderColor, "#e0e0e0");
+                const dividerHColor = fixColor(layout.props.dividerHColor, "#ececec");
+                const dividerVColor = fixColor(layout.props.dividerVColor, "#ebebeb");
 
-                    // Build box-shadow from shadow depth
-                    const shadowDepth = layout.props.shadowDepth || "none";
-                    var cardShadow = "none";
-                    if (shadowDepth === "subtle") {
-                        cardShadow = "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)";
-                    } else if (shadowDepth === "medium") {
-                        cardShadow = "0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06)";
-                    } else if (shadowDepth === "strong") {
-                        cardShadow = "0 10px 30px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.08)";
-                    } else if (shadowDepth === "custom") {
-                        var shCol = fixColor(layout.props.shadowColor, "#000000");
-                        var shX = (layout.props.shadowOffsetX != null ? layout.props.shadowOffsetX : 0);
-                        var shY = (layout.props.shadowOffsetY != null ? layout.props.shadowOffsetY : 4);
-                        var shBlur = (layout.props.shadowBlur != null ? layout.props.shadowBlur : 12);
-                        var shSpread = (layout.props.shadowSpread != null ? layout.props.shadowSpread : 0);
-                        // Convert hex to rgba with 0.15 opacity
-                        var hexToRgba = function (hex, alpha) {
-                            hex = hex.replace("#", "");
-                            if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-                            var r = parseInt(hex.substring(0, 2), 16);
-                            var g = parseInt(hex.substring(2, 4), 16);
-                            var b = parseInt(hex.substring(4, 6), 16);
-                            return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
-                        };
-                        cardShadow = shX + "px " + shY + "px " + shBlur + "px " + shSpread + "px " + hexToRgba(shCol, 0.25);
-                    }
+                // ============================================
+                // BUILD STYLES
+                // ============================================
+                // Build background (solid or gradient)
+                const isGradient = layout.props.enableGradient === true;
+                const bgColor2 = isGradient ? fixColor(layout.props.bgColor2, "#667eea") : bgColor;
+                const gradientDir = layout.props.gradientDirection || "to right";
+                const cardBackground = isGradient
+                    ? `linear-gradient(${gradientDir}, ${bgColor}, ${bgColor2})`
+                    : bgColor;
 
-                    const cardStyle = `
+                // Build box-shadow from shadow depth
+                const shadowDepth = layout.props.shadowDepth || "none";
+                var cardShadow = "none";
+                if (shadowDepth === "subtle") {
+                    cardShadow = "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)";
+                } else if (shadowDepth === "medium") {
+                    cardShadow = "0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06)";
+                } else if (shadowDepth === "strong") {
+                    cardShadow = "0 10px 30px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.08)";
+                } else if (shadowDepth === "custom") {
+                    var shCol = fixColor(layout.props.shadowColor, "#000000");
+                    var shX = (layout.props.shadowOffsetX != null ? layout.props.shadowOffsetX : 0);
+                    var shY = (layout.props.shadowOffsetY != null ? layout.props.shadowOffsetY : 4);
+                    var shBlur = (layout.props.shadowBlur != null ? layout.props.shadowBlur : 12);
+                    var shSpread = (layout.props.shadowSpread != null ? layout.props.shadowSpread : 0);
+                    // Convert hex to rgba with 0.15 opacity
+                    var hexToRgba = function (hex, alpha) {
+                        hex = hex.replace("#", "");
+                        if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+                        var r = parseInt(hex.substring(0, 2), 16);
+                        var g = parseInt(hex.substring(2, 4), 16);
+                        var b = parseInt(hex.substring(4, 6), 16);
+                        return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+                    };
+                    cardShadow = shX + "px " + shY + "px " + shBlur + "px " + shSpread + "px " + hexToRgba(shCol, 0.25);
+                }
+
+                const cardStyle = `
                 background: ${cardBackground};
                 color: ${textColor};
                 border: ${layout.props.showBorder !== false ? `${layout.props.borderWidth || 1}px solid ${borderColor}` : "none"};
@@ -2839,363 +2840,363 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 box-shadow: ${cardShadow};
     `;
 
-                    // Set CSS variables
-                    $element[0].style.setProperty("--kpi-bg-color", bgColor);
-                    $element[0].style.setProperty("--kpi-text-color", textColor);
-                    $element[0].style.setProperty("--kpi-main-value-color", mainValueColor);
-                    $element[0].style.setProperty("--kpi-border-color", borderColor);
-                    $element[0].style.setProperty("--kpi-divider-h-color", dividerHColor);
-                    $element[0].style.setProperty("--kpi-divider-v-color", dividerVColor);
+                // Set CSS variables
+                $element[0].style.setProperty("--kpi-bg-color", bgColor);
+                $element[0].style.setProperty("--kpi-text-color", textColor);
+                $element[0].style.setProperty("--kpi-main-value-color", mainValueColor);
+                $element[0].style.setProperty("--kpi-border-color", borderColor);
+                $element[0].style.setProperty("--kpi-divider-h-color", dividerHColor);
+                $element[0].style.setProperty("--kpi-divider-v-color", dividerVColor);
 
-                    // Set hover shadow (slightly amplified version of base shadow)
-                    var hoverShadow = "0 6px 20px rgba(0,0,0,0.12)";
-                    if (shadowDepth === "subtle") {
-                        hoverShadow = "0 4px 10px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08)";
-                    } else if (shadowDepth === "medium") {
-                        hoverShadow = "0 8px 24px rgba(0,0,0,0.16), 0 4px 8px rgba(0,0,0,0.10)";
-                    } else if (shadowDepth === "strong") {
-                        hoverShadow = "0 16px 40px rgba(0,0,0,0.22), 0 6px 12px rgba(0,0,0,0.12)";
-                    } else if (shadowDepth === "custom") {
-                        // Amplify custom shadow for hover
-                        var hY = Math.round((layout.props.shadowOffsetY || 4) * 1.5);
-                        var hBlur = Math.round((layout.props.shadowBlur || 12) * 1.8);
-                        hoverShadow = cardShadow.replace(
-                            /(\d+)px\s+(\d+)px\s+(\d+)px/,
-                            function (m, x, y, b) { return x + "px " + hY + "px " + hBlur + "px"; }
-                        );
+                // Set hover shadow (slightly amplified version of base shadow)
+                var hoverShadow = "0 6px 20px rgba(0,0,0,0.12)";
+                if (shadowDepth === "subtle") {
+                    hoverShadow = "0 4px 10px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08)";
+                } else if (shadowDepth === "medium") {
+                    hoverShadow = "0 8px 24px rgba(0,0,0,0.16), 0 4px 8px rgba(0,0,0,0.10)";
+                } else if (shadowDepth === "strong") {
+                    hoverShadow = "0 16px 40px rgba(0,0,0,0.22), 0 6px 12px rgba(0,0,0,0.12)";
+                } else if (shadowDepth === "custom") {
+                    // Amplify custom shadow for hover
+                    var hY = Math.round((layout.props.shadowOffsetY || 4) * 1.5);
+                    var hBlur = Math.round((layout.props.shadowBlur || 12) * 1.8);
+                    hoverShadow = cardShadow.replace(
+                        /(\d+)px\s+(\d+)px\s+(\d+)px/,
+                        function (m, x, y, b) { return x + "px " + hY + "px " + hBlur + "px"; }
+                    );
+                }
+                $element[0].style.setProperty("--kpi-hover-shadow", hoverShadow);
+
+                // ============================================
+                // RESPONSIVE FONT SIZE & WIDTH DETECTION
+                // Measured BEFORE building HTML so scaled values
+                // can be embedded directly in the template.
+                // ============================================
+                const cardWidth = $element.width() || 300;
+                const cardHeight = $element.height() || 200;
+
+                // Count visible comparison KPIs for vertical space budget
+                const visibleCompCount = [
+                    layout.props.enableLeft !== false,
+                    layout.props.enableRight !== false,
+                    layout.props.enableThird === true
+                ].filter(Boolean).length;
+
+                // --- Scale MAIN VALUE font size ---
+                const autoFitMainValue = layout.props.autoFitMainValue === true;
+                const userMainFontSize = autoFitMainValue ? 200 : (layout.props.mainValueFontSize || 25);
+                const mainTextLen = String(mainFormatted).replace(/<[^>]*>/g, '').trim().length || 1;
+
+                // Constraint 1: Height cap — value gets 1/heightDiv of card height
+                // More comparisons = less room for the value
+                const heightDiv = visibleCompCount > 0 ? (autoFitMainValue ? 5 : 7.5) : (autoFitMainValue ? 2.2 : 3.5);
+                const heightCap = cardHeight / heightDiv;
+
+                // Constraint 2: Text-width cap — value must fit horizontally
+                const pad = cardWidth <= 160 ? 16 : cardWidth <= 220 ? 20 : 36;
+                const fitWidth = Math.max(40, cardWidth - pad);
+                const textCap = fitWidth / (mainTextLen * 0.58);
+
+                // Constraint 3: Width-proportional cap (relaxed in auto-fit mode)
+                const widthCap = autoFitMainValue ? cardWidth * 0.45 : cardWidth * 0.13;
+
+                // Pick the tightest constraint, floor at 10px
+                const scaledMainFont = Math.round(Math.max(10, Math.min(userMainFontSize, heightCap, textCap, widthCap)));
+
+                // --- Scale TITLE font size ---
+                const userTitleFont = layout.props.mainTitleFontSize || 14;
+                const scaledTitleFont = Math.round(Math.max(8, Math.min(userTitleFont, cardHeight / 12, cardWidth * 0.08)));
+
+                // --- Scale COMPARISON VALUE font size ---
+                let compFontSize = layout.props.compValueFontSize || 18;
+                const compHCap = cardHeight / 9;
+                const compWCap = cardWidth * 0.1;
+                compFontSize = Math.round(Math.max(9, Math.min(compFontSize, compHCap, compWCap)));
+
+                // --- Scale COMPARISON TITLE font size ---
+                const userCompTitleFont = layout.props.leftTitleFontSize || 12;
+                const scaledCompTitleFont = Math.round(Math.max(7, Math.min(userCompTitleFont, cardHeight / 14, cardWidth * 0.07)));
+
+                // --- Scale ARROW size ---
+                const scaledArrowFont = Math.round(Math.max(8, Math.min(14, cardHeight / 11, cardWidth * 0.08)));
+
+                // Width class for CSS fallback
+                const sizeClass = cardWidth <= 120 ? 'kpi-micro' : cardWidth <= 160 ? 'kpi-tiny' : cardWidth <= 220 ? 'kpi-compact' : '';
+                const heightClass = cardHeight <= 120 ? 'kpi-short' : '';
+
+                // ============================================
+                // BUILD MAIN HEADER
+                // ============================================
+                const mainIconUrl = layout.props.titleIcon;
+                const mainIconSize = layout.props.mainIconSize || 20;
+                const mainIconPos = layout.props.mainIconPosition || "left";
+                const mainTitleAlignment = layout.props.mainTitleAlignment || "left";
+                // Parse main title (handles string literals, expressions, plain text)
+                const mainTitleParsed = parseTitleExpression(layout.props.mainTitle || "");
+                let mainTitleRaw = mainTitleParsed.displayText;
+                const needsEvaluation = mainTitleParsed.needsEval;
+                const titleExpression = mainTitleParsed.expression;
+
+                // Check if title is empty - if so, hide the header
+                const hasTitle = mainTitleRaw && String(mainTitleRaw).trim() !== "";
+                const mainTitle = hasTitle ? escapeHtml(mainTitleRaw) : "";
+                const mainTitleFontSize = scaledTitleFont; // Already scaled based on card dimensions
+                const mainTitleFontWeight = layout.props.mainTitleFontWeight || "500";
+                const mainValueFontWeight = layout.props.mainValueFontWeight || "700";
+
+                // --- Subtitle ---
+                const subtitleParsed = parseTitleExpression(layout.props.mainSubtitle || "");
+                let subtitleDisplay = subtitleParsed.displayText;
+                const hasSubtitle = subtitleDisplay && String(subtitleDisplay).trim() !== "";
+                const subtitleText = hasSubtitle ? escapeHtml(subtitleDisplay) : "";
+                const subtitleFontSize = Math.round(Math.max(7, Math.min(layout.props.mainSubtitleFontSize || 11, cardHeight / 16, cardWidth * 0.055)));
+                const subtitleColor = fixColor(layout.props.mainSubtitleColor, "#888888");
+
+                const mainIconHtml = mainIconUrl
+                    ? `<img class="title-icon" src="${mainIconUrl}" style="width:${mainIconSize}px;height:${mainIconSize}px;" alt="">`
+                    : "";
+
+                // Only build header content if title exists
+                let headerContent = "";
+                const subtitleHtml = hasSubtitle
+                    ? `<span class="kpi-subtitle" style="font-size:${subtitleFontSize}px;color:${subtitleColor};">${subtitleText}</span>`
+                    : "";
+                if (hasTitle) {
+                    const titleStyle = `font-size:${mainTitleFontSize}px;font-weight:${mainTitleFontWeight};`;
+                    // Wrap title + subtitle in a vertical group so subtitle appears below the title
+                    const titleGroup = `<div class="kpi-title-group"><span class="kpi-title" style="${titleStyle}">${mainTitle}</span>${subtitleHtml}</div>`;
+                    if (mainIconPos === "top") {
+                        headerContent = `${mainIconHtml}${titleGroup}`;
+                    } else if (mainIconPos === "right") {
+                        headerContent = `${titleGroup}${mainIconHtml}`;
+                    } else {
+                        headerContent = `${mainIconHtml}${titleGroup}`;
                     }
-                    $element[0].style.setProperty("--kpi-hover-shadow", hoverShadow);
+                } else if (hasSubtitle) {
+                    // Subtitle only, no title
+                    headerContent = `<div class="kpi-title-group">${subtitleHtml}</div>`;
+                } else if (mainIconUrl && mainIconPos === "top") {
+                    // If no title but icon is at top, still show icon
+                    headerContent = mainIconHtml;
+                }
 
-                    // ============================================
-                    // RESPONSIVE FONT SIZE & WIDTH DETECTION
-                    // Measured BEFORE building HTML so scaled values
-                    // can be embedded directly in the template.
-                    // ============================================
-                    const cardWidth = $element.width() || 300;
-                    const cardHeight = $element.height() || 200;
+                const headerAlignment = mainTitleAlignment === "center" ? "center" : mainTitleAlignment === "right" ? "flex-end" : "flex-start";
 
-                    // Count visible comparison KPIs for vertical space budget
-                    const visibleCompCount = [
-                        layout.props.enableLeft !== false,
-                        layout.props.enableRight !== false,
-                        layout.props.enableThird === true
-                    ].filter(Boolean).length;
+                // ============================================
+                // BUILD COMPARISON BLOCKS (only when comparison mode is active)
+                // ============================================
+                const comparisonBlocks = [];
+                let enabledComparisons = [];
+                const evaluatedTitles = {};
+                const comparisonSides = ["left", "right", "third"];
+                const originalTitles = {};
 
-                    // --- Scale MAIN VALUE font size ---
-                    const autoFitMainValue = layout.props.autoFitMainValue === true;
-                    const userMainFontSize = autoFitMainValue ? 200 : (layout.props.mainValueFontSize || 25);
-                    const mainTextLen = String(mainFormatted).replace(/<[^>]*>/g, '').trim().length || 1;
+                if (showComparison) {
+                    // Parse comparison titles using the shared helper
+                    comparisonSides.forEach(function (side) {
+                        const parsed = parseTitleExpression(layout.props[`${side}Title`] || "");
+                        evaluatedTitles[side] = {
+                            raw: parsed.displayText,
+                            expr: parsed.expression,
+                            needsEval: parsed.needsEval,
+                            isStringLiteral: !parsed.needsEval && parsed.expression === null && parsed.displayText !== ""
+                        };
+                    });
 
-                    // Constraint 1: Height cap — value gets 1/heightDiv of card height
-                    // More comparisons = less room for the value
-                    const heightDiv = visibleCompCount > 0 ? (autoFitMainValue ? 5 : 7.5) : (autoFitMainValue ? 2.2 : 3.5);
-                    const heightCap = cardHeight / heightDiv;
+                    enabledComparisons = [
+                        layout.props.enableLeft !== false ? "left" : null,
+                        layout.props.enableRight !== false ? "right" : null,
+                        layout.props.enableThird === true ? "third" : null
+                    ].filter(Boolean);
 
-                    // Constraint 2: Text-width cap — value must fit horizontally
-                    const pad = cardWidth <= 160 ? 16 : cardWidth <= 220 ? 20 : 36;
-                    const fitWidth = Math.max(40, cardWidth - pad);
-                    const textCap = fitWidth / (mainTextLen * 0.58);
+                    // Temporarily update layout.props with evaluated titles (or original if not expression)
+                    comparisonSides.forEach(function (side) {
+                        originalTitles[side] = layout.props[`${side}Title`];
+                        if (evaluatedTitles[side] && evaluatedTitles[side].isStringLiteral) {
+                            layout.props[`${side}Title`] = evaluatedTitles[side].raw;
+                        } else if (evaluatedTitles[side] && !evaluatedTitles[side].needsEval) {
+                            layout.props[`${side}Title`] = evaluatedTitles[side].raw;
+                        } else if (evaluatedTitles[side] && evaluatedTitles[side].needsEval) {
+                            layout.props[`${side}Title`] = "";
+                        }
+                    });
 
-                    // Constraint 3: Width-proportional cap (relaxed in auto-fit mode)
-                    const widthCap = autoFitMainValue ? cardWidth * 0.45 : cardWidth * 0.13;
+                    if (enabledComparisons.includes("left")) {
+                        comparisonBlocks.push(buildComparisonBlock("left", leftVal, leftFormatted, layout, compFontSize, layout.props.autoContrast, bgColor));
+                    }
+                    if (enabledComparisons.includes("right")) {
+                        comparisonBlocks.push(buildComparisonBlock("right", rightVal, rightFormatted, layout, compFontSize, layout.props.autoContrast, bgColor));
+                    }
+                    if (enabledComparisons.includes("third")) {
+                        comparisonBlocks.push(buildComparisonBlock("third", thirdVal, thirdFormatted, layout, compFontSize, layout.props.autoContrast, bgColor));
+                    }
 
-                    // Pick the tightest constraint, floor at 10px
-                    const scaledMainFont = Math.round(Math.max(10, Math.min(userMainFontSize, heightCap, textCap, widthCap)));
+                    // Restore original titles
+                    comparisonSides.forEach(function (side) {
+                        layout.props[`${side}Title`] = originalTitles[side];
+                    });
+                }
 
-                    // --- Scale TITLE font size ---
-                    const userTitleFont = layout.props.mainTitleFontSize || 14;
-                    const scaledTitleFont = Math.round(Math.max(8, Math.min(userTitleFont, cardHeight / 12, cardWidth * 0.08)));
+                const comparisonCount = comparisonBlocks.length;
+                const comparisonClass = comparisonCount === 1 ? "one-block" : comparisonCount === 2 ? "two-blocks" : "three-blocks";
 
-                    // --- Scale COMPARISON VALUE font size ---
-                    let compFontSize = layout.props.compValueFontSize || 18;
-                    const compHCap = cardHeight / 9;
-                    const compWCap = cardWidth * 0.1;
-                    compFontSize = Math.round(Math.max(9, Math.min(compFontSize, compHCap, compWCap)));
+                // Check if chart is active - use bottom section mode
+                const hasChartSvg = miniChartSvg && miniChartSvg.trim() !== "";
+                const isChartDisabled = !showChart || !hasChartSvg;
 
-                    // --- Scale COMPARISON TITLE font size ---
-                    const userCompTitleFont = layout.props.leftTitleFontSize || 12;
-                    const scaledCompTitleFont = Math.round(Math.max(7, Math.min(userCompTitleFont, cardHeight / 14, cardWidth * 0.07)));
+                // Build divider HTML with conditional margin when chart is disabled
+                // Only show dividers when comparison KPIs are visible
+                let dividerH = "";
+                let dividerV = "";
+                if (showComparison && comparisonCount > 0) {
+                    let dividerMarginTop;
+                    if (layout.props.dividerHPosition !== null && layout.props.dividerHPosition !== undefined && layout.props.dividerHPosition !== "") {
+                        dividerMarginTop = `${layout.props.dividerHPosition}px`;
+                    } else {
+                        dividerMarginTop = isChartDisabled ? "-8px" : "16px";
+                    }
+                    const dividerMarginBottom = "0px";
+                    const dividerHWidth = layout.props.dividerHWidth !== undefined ? layout.props.dividerHWidth : 1;
 
-                    // --- Scale ARROW size ---
-                    const scaledArrowFont = Math.round(Math.max(8, Math.min(14, cardHeight / 11, cardWidth * 0.08)));
-
-                    // Width class for CSS fallback
-                    const sizeClass = cardWidth <= 120 ? 'kpi-micro' : cardWidth <= 160 ? 'kpi-tiny' : cardWidth <= 220 ? 'kpi-compact' : '';
-                    const heightClass = cardHeight <= 120 ? 'kpi-short' : '';
-
-                    // ============================================
-                    // BUILD MAIN HEADER
-                    // ============================================
-                    const mainIconUrl = layout.props.titleIcon;
-                    const mainIconSize = layout.props.mainIconSize || 20;
-                    const mainIconPos = layout.props.mainIconPosition || "left";
-                    const mainTitleAlignment = layout.props.mainTitleAlignment || "left";
-                    // Parse main title (handles string literals, expressions, plain text)
-                    const mainTitleParsed = parseTitleExpression(layout.props.mainTitle || "");
-                    let mainTitleRaw = mainTitleParsed.displayText;
-                    const needsEvaluation = mainTitleParsed.needsEval;
-                    const titleExpression = mainTitleParsed.expression;
-
-                    // Check if title is empty - if so, hide the header
-                    const hasTitle = mainTitleRaw && String(mainTitleRaw).trim() !== "";
-                    const mainTitle = hasTitle ? escapeHtml(mainTitleRaw) : "";
-                    const mainTitleFontSize = scaledTitleFont; // Already scaled based on card dimensions
-                    const mainTitleFontWeight = layout.props.mainTitleFontWeight || "500";
-                    const mainValueFontWeight = layout.props.mainValueFontWeight || "700";
-
-                    // --- Subtitle ---
-                    const subtitleParsed = parseTitleExpression(layout.props.mainSubtitle || "");
-                    let subtitleDisplay = subtitleParsed.displayText;
-                    const hasSubtitle = subtitleDisplay && String(subtitleDisplay).trim() !== "";
-                    const subtitleText = hasSubtitle ? escapeHtml(subtitleDisplay) : "";
-                    const subtitleFontSize = Math.round(Math.max(7, Math.min(layout.props.mainSubtitleFontSize || 11, cardHeight / 16, cardWidth * 0.055)));
-                    const subtitleColor = fixColor(layout.props.mainSubtitleColor, "#888888");
-
-                    const mainIconHtml = mainIconUrl
-                        ? `<img class="title-icon" src="${mainIconUrl}" style="width:${mainIconSize}px;height:${mainIconSize}px;" alt="">`
+                    dividerH = layout.props.showDividerH !== false
+                        ? `<div class="divider-h" style="background:${dividerHColor};margin-top:${dividerMarginTop};margin-bottom:${dividerMarginBottom};height:${dividerHWidth}px;"></div>`
                         : "";
 
-                    // Only build header content if title exists
-                    let headerContent = "";
-                    const subtitleHtml = hasSubtitle
-                        ? `<span class="kpi-subtitle" style="font-size:${subtitleFontSize}px;color:${subtitleColor};">${subtitleText}</span>`
+                    const paddingTop = layout.props.paddingTop !== undefined ? layout.props.paddingTop : 0;
+                    const paddingBottom = layout.props.paddingBottom !== undefined ? layout.props.paddingBottom : 5;
+                    const hasCustomHeight = layout.props.dividerVHeight !== null && layout.props.dividerVHeight !== undefined;
+                    const dividerVHeight = hasCustomHeight ? `${layout.props.dividerVHeight}px` : "auto";
+                    const dividerVAlignSelf = hasCustomHeight ? "center" : "stretch";
+                    const dividerVWidth = layout.props.dividerVWidth !== undefined ? layout.props.dividerVWidth : 1;
+
+                    dividerV = layout.props.showDividerV !== false && comparisonCount > 1
+                        ? `<div class="divider-v" style="background:${dividerVColor};padding-top:${paddingTop}px;padding-bottom:${paddingBottom}px;height:${dividerVHeight};align-self:${dividerVAlignSelf};width:${dividerVWidth}px;"></div>`
                         : "";
-                    if (hasTitle) {
-                        const titleStyle = `font-size:${mainTitleFontSize}px;font-weight:${mainTitleFontWeight};`;
-                        // Wrap title + subtitle in a vertical group so subtitle appears below the title
-                        const titleGroup = `<div class="kpi-title-group"><span class="kpi-title" style="${titleStyle}">${mainTitle}</span>${subtitleHtml}</div>`;
-                        if (mainIconPos === "top") {
-                            headerContent = `${mainIconHtml}${titleGroup}`;
-                        } else if (mainIconPos === "right") {
-                            headerContent = `${titleGroup}${mainIconHtml}`;
-                        } else {
-                            headerContent = `${mainIconHtml}${titleGroup}`;
+                }
+
+                // Build comparison HTML with dividers
+                let comparisonHtml = "";
+                if (showComparison && comparisonBlocks.length > 0) {
+                    const comparisonStyle = isChartDisabled ? "margin-top:0;padding-top:0;" : "";
+                    comparisonHtml = `<div class="comparison-blocks ${comparisonClass}" style="${comparisonStyle}">`;
+                    comparisonBlocks.forEach((block, idx) => {
+                        comparisonHtml += block;
+                        if (idx < comparisonBlocks.length - 1 && dividerV) {
+                            comparisonHtml += dividerV;
                         }
-                    } else if (hasSubtitle) {
-                        // Subtitle only, no title
-                        headerContent = `<div class="kpi-title-group">${subtitleHtml}</div>`;
-                    } else if (mainIconUrl && mainIconPos === "top") {
-                        // If no title but icon is at top, still show icon
-                        headerContent = mainIconHtml;
+                    });
+                    comparisonHtml += `</div>`;
+                }
+
+                // ============================================
+                // BUILD FINAL HTML
+                // ============================================
+                // Use the isChartDisabled variable already declared above
+                const noChartClass = isChartDisabled ? "no-chart" : "";
+                // When there's no bottom content at all (no chart AND no comparison), center the main content vertically
+                const hasBottomContent = (showChart && hasChartSvg) || (showComparison && comparisonBlocks.length > 0);
+                const centerContentClass = !hasBottomContent ? "kpi-center-content" : "";
+                // When both chart + comparison are shown, use compact layout
+                const bothModeClass = (showChart && hasChartSvg && showComparison && comparisonBlocks.length > 0) ? "kpi-both-mode" : "";
+                const mainValueAlignment = layout.props.mainValueAlignment || "center";
+                const mainValueAlignClass = `main-value-align-${mainValueAlignment}`;
+                // ============================================
+                // READ TOOLTIP PROPERTIES FROM LAYOUT
+                // ============================================
+                const enableTooltip = layout.props.enableTooltip === true;
+                const tooltipIcon = layout.props.tooltipIcon || "info";
+                const tooltipIconSize = layout.props.tooltipIconSize || 20;
+                const tooltipText = layout.props.tooltipText || "";
+                const tooltipDescriptionFontSize = layout.props.tooltipDescriptionFontSize || 14;
+                const tooltipDescriptionColor = fixColor(layout.props.tooltipDescriptionColor, "#333333");
+                const tooltipInsightExpression = layout.props.tooltipInsightExpression || "";
+                const tooltipInsightFontSize = layout.props.tooltipInsightFontSize || 16;
+                const tooltipInsightColor = fixColor(layout.props.tooltipInsightColor, "#667eea");
+                const tooltipMode = layout.props.tooltipMode || false;
+                const enableInsightExpression = layout.props.enableInsightExpression !== false;
+                const flipTrigger = layout.props.flipTrigger || "iconHover";
+                const flipBackInheritBg = layout.props.flipBackInheritBg !== false;
+                const flipBackTextAlign = layout.props.flipBackTextAlign || "center";
+
+                const isFlipCardMode = tooltipMode === true;
+
+                let tooltipIconHtml = "";
+                let flipCardBackContent = "";
+
+                // Helper: format an insight value for display
+                function formatInsightVal(raw) {
+                    if (raw === "" || raw === null || raw === undefined) return "—";
+                    if (typeof raw === "number") {
+                        return Number.isInteger(raw)
+                            ? raw.toLocaleString()
+                            : raw.toLocaleString(undefined, { maximumFractionDigits: 2 });
                     }
+                    return escapeHtml(String(raw));
+                }
 
-                    const headerAlignment = mainTitleAlignment === "center" ? "center" : mainTitleAlignment === "right" ? "flex-end" : "flex-start";
+                if (enableTooltip && tooltipIcon) {
+                    if (isFlipCardMode) {
+                        // Flip Card Mode
+                        const escapedTooltipText = escapeHtml(tooltipText || "").replace(/\n/g, '<br>');
 
-                    // ============================================
-                    // BUILD COMPARISON BLOCKS (only when comparison mode is active)
-                    // ============================================
-                    const comparisonBlocks = [];
-                    let enabledComparisons = [];
-                    const evaluatedTitles = {};
-                    const comparisonSides = ["left", "right", "third"];
-                    const originalTitles = {};
+                        // Back face background
+                        const flipBg = flipBackInheritBg ? cardBackground : "#ffffff";
+                        const flipBgStyle = `background:${flipBg};`;
 
-                    if (showComparison) {
-                        // Parse comparison titles using the shared helper
-                        comparisonSides.forEach(function (side) {
-                            const parsed = parseTitleExpression(layout.props[`${side}Title`] || "");
-                            evaluatedTitles[side] = {
-                                raw: parsed.displayText,
-                                expr: parsed.expression,
-                                needsEval: parsed.needsEval,
-                                isStringLiteral: !parsed.needsEval && parsed.expression === null && parsed.displayText !== ""
-                            };
-                        });
-
-                        enabledComparisons = [
-                            layout.props.enableLeft !== false ? "left" : null,
-                            layout.props.enableRight !== false ? "right" : null,
-                            layout.props.enableThird === true ? "third" : null
-                        ].filter(Boolean);
-
-                        // Temporarily update layout.props with evaluated titles (or original if not expression)
-                        comparisonSides.forEach(function (side) {
-                            originalTitles[side] = layout.props[`${side}Title`];
-                            if (evaluatedTitles[side] && evaluatedTitles[side].isStringLiteral) {
-                                layout.props[`${side}Title`] = evaluatedTitles[side].raw;
-                            } else if (evaluatedTitles[side] && !evaluatedTitles[side].needsEval) {
-                                layout.props[`${side}Title`] = evaluatedTitles[side].raw;
-                            } else if (evaluatedTitles[side] && evaluatedTitles[side].needsEval) {
-                                layout.props[`${side}Title`] = "";
-                            }
-                        });
-
-                        if (enabledComparisons.includes("left")) {
-                            comparisonBlocks.push(buildComparisonBlock("left", leftVal, leftFormatted, layout, compFontSize, layout.props.autoContrast, bgColor));
-                        }
-                        if (enabledComparisons.includes("right")) {
-                            comparisonBlocks.push(buildComparisonBlock("right", rightVal, rightFormatted, layout, compFontSize, layout.props.autoContrast, bgColor));
-                        }
-                        if (enabledComparisons.includes("third")) {
-                            comparisonBlocks.push(buildComparisonBlock("third", thirdVal, thirdFormatted, layout, compFontSize, layout.props.autoContrast, bgColor));
-                        }
-
-                        // Restore original titles
-                        comparisonSides.forEach(function (side) {
-                            layout.props[`${side}Title`] = originalTitles[side];
-                        });
-                    }
-
-                    const comparisonCount = comparisonBlocks.length;
-                    const comparisonClass = comparisonCount === 1 ? "one-block" : comparisonCount === 2 ? "two-blocks" : "three-blocks";
-
-                    // Check if chart is active - use bottom section mode
-                    const hasChartSvg = miniChartSvg && miniChartSvg.trim() !== "";
-                    const isChartDisabled = !showChart || !hasChartSvg;
-
-                    // Build divider HTML with conditional margin when chart is disabled
-                    // Only show dividers when comparison KPIs are visible
-                    let dividerH = "";
-                    let dividerV = "";
-                    if (showComparison && comparisonCount > 0) {
-                        let dividerMarginTop;
-                        if (layout.props.dividerHPosition !== null && layout.props.dividerHPosition !== undefined && layout.props.dividerHPosition !== "") {
-                            dividerMarginTop = `${layout.props.dividerHPosition}px`;
-                        } else {
-                            dividerMarginTop = isChartDisabled ? "-8px" : "16px";
-                        }
-                        const dividerMarginBottom = "0px";
-                        const dividerHWidth = layout.props.dividerHWidth !== undefined ? layout.props.dividerHWidth : 1;
-
-                        dividerH = layout.props.showDividerH !== false
-                            ? `<div class="divider-h" style="background:${dividerHColor};margin-top:${dividerMarginTop};margin-bottom:${dividerMarginBottom};height:${dividerHWidth}px;"></div>`
+                        // Back face title
+                        const backTitleRaw = layout.props.flipBackTitle || "";
+                        const backTitleFontSize = layout.props.flipBackTitleFontSize || 13;
+                        const backTitleColor = fixColor(layout.props.flipBackTitleColor, "#555555");
+                        const backTitleHtml = backTitleRaw.trim()
+                            ? `<div class="flip-back-title" style="font-size:${backTitleFontSize}px;color:${backTitleColor};text-align:${flipBackTextAlign};">${escapeHtml(backTitleRaw)}</div>`
                             : "";
 
-                        const paddingTop = layout.props.paddingTop !== undefined ? layout.props.paddingTop : 0;
-                        const paddingBottom = layout.props.paddingBottom !== undefined ? layout.props.paddingBottom : 5;
-                        const hasCustomHeight = layout.props.dividerVHeight !== null && layout.props.dividerVHeight !== undefined;
-                        const dividerVHeight = hasCustomHeight ? `${layout.props.dividerVHeight}px` : "auto";
-                        const dividerVAlignSelf = hasCustomHeight ? "center" : "stretch";
-                        const dividerVWidth = layout.props.dividerVWidth !== undefined ? layout.props.dividerVWidth : 1;
-
-                        dividerV = layout.props.showDividerV !== false && comparisonCount > 1
-                            ? `<div class="divider-v" style="background:${dividerVColor};padding-top:${paddingTop}px;padding-bottom:${paddingBottom}px;height:${dividerVHeight};align-self:${dividerVAlignSelf};width:${dividerVWidth}px;"></div>`
+                        // Back divider
+                        const backDividerColor = fixColor(layout.props.flipBackDividerColor, "#e0e0e0");
+                        const backDividerHtml = layout.props.flipBackShowDivider !== false
+                            ? `<div class="flip-back-divider" style="background:${backDividerColor};"></div>`
                             : "";
-                    }
 
-                    // Build comparison HTML with dividers
-                    let comparisonHtml = "";
-                    if (showComparison && comparisonBlocks.length > 0) {
-                        const comparisonStyle = isChartDisabled ? "margin-top:0;padding-top:0;" : "";
-                        comparisonHtml = `<div class="comparison-blocks ${comparisonClass}" style="${comparisonStyle}">`;
-                        comparisonBlocks.forEach((block, idx) => {
-                            comparisonHtml += block;
-                            if (idx < comparisonBlocks.length - 1 && dividerV) {
-                                comparisonHtml += dividerV;
-                            }
-                        });
-                        comparisonHtml += `</div>`;
-                    }
-
-                    // ============================================
-                    // BUILD FINAL HTML
-                    // ============================================
-                    // Use the isChartDisabled variable already declared above
-                    const noChartClass = isChartDisabled ? "no-chart" : "";
-                    // When there's no bottom content at all (no chart AND no comparison), center the main content vertically
-                    const hasBottomContent = (showChart && hasChartSvg) || (showComparison && comparisonBlocks.length > 0);
-                    const centerContentClass = !hasBottomContent ? "kpi-center-content" : "";
-                    // When both chart + comparison are shown, use compact layout
-                    const bothModeClass = (showChart && hasChartSvg && showComparison && comparisonBlocks.length > 0) ? "kpi-both-mode" : "";
-                    const mainValueAlignment = layout.props.mainValueAlignment || "center";
-                    const mainValueAlignClass = `main-value-align-${mainValueAlignment}`;
-                    // ============================================
-                    // READ TOOLTIP PROPERTIES FROM LAYOUT
-                    // ============================================
-                    const enableTooltip = layout.props.enableTooltip === true;
-                    const tooltipIcon = layout.props.tooltipIcon || "info";
-                    const tooltipIconSize = layout.props.tooltipIconSize || 20;
-                    const tooltipText = layout.props.tooltipText || "";
-                    const tooltipDescriptionFontSize = layout.props.tooltipDescriptionFontSize || 14;
-                    const tooltipDescriptionColor = fixColor(layout.props.tooltipDescriptionColor, "#333333");
-                    const tooltipInsightExpression = layout.props.tooltipInsightExpression || "";
-                    const tooltipInsightFontSize = layout.props.tooltipInsightFontSize || 16;
-                    const tooltipInsightColor = fixColor(layout.props.tooltipInsightColor, "#667eea");
-                    const tooltipMode = layout.props.tooltipMode || false;
-                    const enableInsightExpression = layout.props.enableInsightExpression !== false;
-                    const flipTrigger = layout.props.flipTrigger || "iconHover";
-                    const flipBackInheritBg = layout.props.flipBackInheritBg !== false;
-                    const flipBackTextAlign = layout.props.flipBackTextAlign || "center";
-
-                    const isFlipCardMode = tooltipMode === true;
-
-                    let tooltipIconHtml = "";
-                    let flipCardBackContent = "";
-
-                    // Helper: format an insight value for display
-                    function formatInsightVal(raw) {
-                        if (raw === "" || raw === null || raw === undefined) return "—";
-                        if (typeof raw === "number") {
-                            return Number.isInteger(raw)
-                                ? raw.toLocaleString()
-                                : raw.toLocaleString(undefined, { maximumFractionDigits: 2 });
+                        // Insight row builder
+                        function buildInsightRow(val, fontSize, color) {
+                            var formatted = formatInsightVal(val);
+                            return `<div class="kpi-expression-value" style="font-size:${fontSize}px;color:${fixColor(color, '#667eea')};text-align:${flipBackTextAlign};">${formatted}</div>`;
                         }
-                        return escapeHtml(String(raw));
-                    }
 
-                    if (enableTooltip && tooltipIcon) {
-                        if (isFlipCardMode) {
-                            // Flip Card Mode
-                            const escapedTooltipText = escapeHtml(tooltipText || "").replace(/\n/g, '<br>');
-
-                            // Back face background
-                            const flipBg = flipBackInheritBg ? cardBackground : "#ffffff";
-                            const flipBgStyle = `background:${flipBg};`;
-
-                            // Back face title
-                            const backTitleRaw = layout.props.flipBackTitle || "";
-                            const backTitleFontSize = layout.props.flipBackTitleFontSize || 13;
-                            const backTitleColor = fixColor(layout.props.flipBackTitleColor, "#555555");
-                            const backTitleHtml = backTitleRaw.trim()
-                                ? `<div class="flip-back-title" style="font-size:${backTitleFontSize}px;color:${backTitleColor};text-align:${flipBackTextAlign};">${escapeHtml(backTitleRaw)}</div>`
-                                : "";
-
-                            // Back divider
-                            const backDividerColor = fixColor(layout.props.flipBackDividerColor, "#e0e0e0");
-                            const backDividerHtml = layout.props.flipBackShowDivider !== false
-                                ? `<div class="flip-back-divider" style="background:${backDividerColor};"></div>`
-                                : "";
-
-                            // Insight row builder
-                            function buildInsightRow(val, fontSize, color) {
-                                var formatted = formatInsightVal(val);
-                                return `<div class="kpi-expression-value" style="font-size:${fontSize}px;color:${fixColor(color, '#667eea')};text-align:${flipBackTextAlign};">${formatted}</div>`;
+                        // Build insight rows
+                        let insightRowsHtml = "";
+                        if (enableInsightExpression && (tooltipInsightExpression || tooltipInsightExpression === 0)) {
+                            insightRowsHtml += buildInsightRow(tooltipInsightExpression, tooltipInsightFontSize, tooltipInsightColor);
+                        }
+                        // Row 2
+                        if (layout.props.enableInsightRow2 === true) {
+                            var r2Label = layout.props.insightRow2Label || "";
+                            var r2Val = layout.props.insightRow2Expression || "";
+                            var r2Fs = layout.props.insightRow2FontSize || 16;
+                            var r2Col = layout.props.insightRow2Color || "#667eea";
+                            if (r2Label.trim()) {
+                                insightRowsHtml += `<div class="flip-back-row-label" style="text-align:${flipBackTextAlign};">${escapeHtml(r2Label)}</div>`;
                             }
-
-                            // Build insight rows
-                            let insightRowsHtml = "";
-                            if (enableInsightExpression && (tooltipInsightExpression || tooltipInsightExpression === 0)) {
-                                insightRowsHtml += buildInsightRow(tooltipInsightExpression, tooltipInsightFontSize, tooltipInsightColor);
+                            insightRowsHtml += buildInsightRow(r2Val, r2Fs, r2Col);
+                        }
+                        // Row 3
+                        if (layout.props.enableInsightRow3 === true) {
+                            var r3Label = layout.props.insightRow3Label || "";
+                            var r3Val = layout.props.insightRow3Expression || "";
+                            var r3Fs = layout.props.insightRow3FontSize || 16;
+                            var r3Col = layout.props.insightRow3Color || "#667eea";
+                            if (r3Label.trim()) {
+                                insightRowsHtml += `<div class="flip-back-row-label" style="text-align:${flipBackTextAlign};">${escapeHtml(r3Label)}</div>`;
                             }
-                            // Row 2
-                            if (layout.props.enableInsightRow2 === true) {
-                                var r2Label = layout.props.insightRow2Label || "";
-                                var r2Val = layout.props.insightRow2Expression || "";
-                                var r2Fs = layout.props.insightRow2FontSize || 16;
-                                var r2Col = layout.props.insightRow2Color || "#667eea";
-                                if (r2Label.trim()) {
-                                    insightRowsHtml += `<div class="flip-back-row-label" style="text-align:${flipBackTextAlign};">${escapeHtml(r2Label)}</div>`;
-                                }
-                                insightRowsHtml += buildInsightRow(r2Val, r2Fs, r2Col);
-                            }
-                            // Row 3
-                            if (layout.props.enableInsightRow3 === true) {
-                                var r3Label = layout.props.insightRow3Label || "";
-                                var r3Val = layout.props.insightRow3Expression || "";
-                                var r3Fs = layout.props.insightRow3FontSize || 16;
-                                var r3Col = layout.props.insightRow3Color || "#667eea";
-                                if (r3Label.trim()) {
-                                    insightRowsHtml += `<div class="flip-back-row-label" style="text-align:${flipBackTextAlign};">${escapeHtml(r3Label)}</div>`;
-                                }
-                                insightRowsHtml += buildInsightRow(r3Val, r3Fs, r3Col);
-                            }
+                            insightRowsHtml += buildInsightRow(r3Val, r3Fs, r3Col);
+                        }
 
-                            // Has any content below the description?
-                            const hasInsightContent = insightRowsHtml.trim() !== "";
-                            // Show divider only if there is description AND insight content
-                            const showDivider = escapedTooltipText.trim() !== "" && hasInsightContent;
+                        // Has any content below the description?
+                        const hasInsightContent = insightRowsHtml.trim() !== "";
+                        // Show divider only if there is description AND insight content
+                        const showDivider = escapedTooltipText.trim() !== "" && hasInsightContent;
 
-                            flipCardBackContent = `
+                        flipCardBackContent = `
                         <div class="flip-card-back-content" style="text-align:${flipBackTextAlign};">
                             ${backTitleHtml}
                             ${escapedTooltipText ? `<div class="kpi-description" style="font-size:${tooltipDescriptionFontSize}px;color:${tooltipDescriptionColor};">${escapedTooltipText}</div>` : ""}
@@ -3204,8 +3205,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                         </div>
                     `;
 
-                            // Icon trigger — add data attribute for JS trigger logic
-                            tooltipIconHtml = `
+                        // Icon trigger — add data attribute for JS trigger logic
+                        tooltipIconHtml = `
                         <div class="tooltip-icon-trigger" data-flip-trigger="${flipTrigger}">
                             <span class="lui-icon lui-icon--${tooltipIcon} kpi-tooltip-icon" 
                                   style="font-size:${tooltipIconSize}px;" 
@@ -3213,10 +3214,10 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                             </span>
                         </div>
                     `;
-                        } else {
-                            // Standard Tooltip Mode
-                            const escapedTooltipText = escapeHtml(tooltipText || "").replace(/\n/g, '<br>');
-                            tooltipIconHtml = `
+                    } else {
+                        // Standard Tooltip Mode
+                        const escapedTooltipText = escapeHtml(tooltipText || "").replace(/\n/g, '<br>');
+                        tooltipIconHtml = `
                         <div class="kpi-tooltip-icon-wrapper">
                             <span class="lui-icon lui-icon--${tooltipIcon} kpi-tooltip-icon" 
                                   style="font-size:${tooltipIconSize}px;" 
@@ -3225,28 +3226,28 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                             <div class="kpi-tooltip-popup">${escapedTooltipText}</div>
                         </div>
                     `;
-                        }
                     }
+                }
 
-                    // ============================================
-                    // BUILD MAIN VALUE DISPLAY (prefix + icon + value + suffix)
-                    // ============================================
-                    const mainPrefix = layout.props.mainValuePrefix || "";
-                    const mainSuffix = layout.props.mainValueSuffix || "";
-                    const mainPrefixHtml = mainPrefix ? `<span class="val-prefix">${escapeHtml(mainPrefix)}</span>` : "";
-                    const mainSuffixHtml = mainSuffix ? `<span class="val-suffix">${escapeHtml(mainSuffix)}</span>` : "";
+                // ============================================
+                // BUILD MAIN VALUE DISPLAY (prefix + icon + value + suffix)
+                // ============================================
+                const mainPrefix = layout.props.mainValuePrefix || "";
+                const mainSuffix = layout.props.mainValueSuffix || "";
+                const mainPrefixHtml = mainPrefix ? `<span class="val-prefix">${escapeHtml(mainPrefix)}</span>` : "";
+                const mainSuffixHtml = mainSuffix ? `<span class="val-suffix">${escapeHtml(mainSuffix)}</span>` : "";
 
-                    const mainValueInner = mainPrefixHtml
-                        + `<span class="main-val-num">${mainFormatted}</span>`
-                        + mainSuffixHtml;
+                const mainValueInner = mainPrefixHtml
+                    + `<span class="main-val-num">${mainFormatted}</span>`
+                    + mainSuffixHtml;
 
-                    // Build the card structure - always use size wrapper to prevent collapse
-                    // In flip card mode, wrap in flip card structure
-                    let html = '';
+                // Build the card structure - always use size wrapper to prevent collapse
+                // In flip card mode, wrap in flip card structure
+                let html = '';
 
-                    if (isFlipCardMode) {
-                        // Flip card mode - use full flip structure
-                        html = `
+                if (isFlipCardMode) {
+                    // Flip card mode - use full flip structure
+                    html = `
                     <div class="kpi-size-wrapper">
                         <div class="kpi-flip-card-wrapper">
                             <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass} kpi-flip-card" style="${cardStyle}">
@@ -3273,9 +3274,9 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                         </div>
                     </div>
                 `;
-                    } else {
-                        // Standard mode - simple structure without flip wrapper
-                        html = `
+                } else {
+                    // Standard mode - simple structure without flip wrapper
+                    html = `
                     <div class="kpi-size-wrapper">
                         <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass}" style="${cardStyle}">
                             ${tooltipIconHtml}
@@ -3297,434 +3298,434 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                         </div>
                     </div>
                 `;
+                }
+
+                $element.html(html);
+
+                // Add class to parent Qlik containers for scoped CSS targeting
+                $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').addClass('kpi-extension-wrapper');
+
+                // CRITICAL: Force parent Qlik containers to fill 100%
+                // Apply styles directly to ensure they take effect
+                $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').css({
+                    'width': '100%',
+                    'height': '100%',
+                    'padding': '0',
+                    'margin': '0',
+                    'box-sizing': 'border-box',
+                    'min-width': '0',
+                    'min-height': '0',
+                    'max-width': 'none',
+                    'max-height': 'none'
+                });
+
+                // ============================================
+                // POST-RENDER: Apply CSS classes & confirm sizes
+                // Font sizes were already calculated BEFORE HTML
+                // was built and are embedded in the template.
+                // This section adds responsive CSS classes and
+                // re-confirms dynamic values on the DOM elements.
+                // ============================================
+                const $sizeWrapper = $element.find('.kpi-size-wrapper');
+
+                // Apply responsive size classes (CSS fallback for @container)
+                if (sizeClass) $sizeWrapper.addClass(sizeClass);
+                if (heightClass) $sizeWrapper.addClass(heightClass);
+
+                // Re-confirm main value color (inline style + JS backup)
+                const $mainValue = $element.find('.main-value');
+                if ($mainValue.length > 0) {
+                    const mainValueEl = $mainValue[0];
+                    if (mainValueEl) {
+                        mainValueEl.style.setProperty('font-size', scaledMainFont + 'px', 'important');
+                        mainValueEl.style.setProperty('font-weight', mainValueFontWeight, 'important');
+                        mainValueEl.style.setProperty('color', mainValueColor, 'important');
+                        $mainValue.attr('data-color', mainValueColor);
+                    }
+                }
+
+                // Apply scaled comparison value font sizes
+                const $compValues = $element.find('.comp-value');
+                $compValues.each(function () {
+                    this.style.setProperty('font-size', compFontSize + 'px', 'important');
+                });
+
+                // Apply scaled comparison title font sizes
+                const $compTitles = $element.find('.comp-title');
+                $compTitles.each(function () {
+                    this.style.setProperty('font-size', scaledCompTitleFont + 'px', 'important');
+                });
+
+                // Apply scaled arrow sizes
+                const $compArrows = $element.find('.comp-arrow');
+                $compArrows.each(function () {
+                    this.style.setProperty('font-size', scaledArrowFont + 'px', 'important');
+                });
+
+                // Apply scaled title font
+                const $kpiTitle = $element.find('.kpi-title');
+                if ($kpiTitle.length > 0) {
+                    $kpiTitle[0].style.setProperty('font-size', scaledTitleFont + 'px', 'important');
+                }
+
+                // ============================================
+                // COUNT-UP ANIMATION
+                // ============================================
+                if (layout.props.enableCountUp !== false) {
+                    var animDuration = parseInt(layout.props.countUpDuration, 10) || 600;
+
+                    // Main value — animate the inner .main-val-num span so prefix/suffix/icon stay stable
+                    var $mainValNum = $element.find('.main-val-num');
+                    if ($mainValNum.length > 0 && mainVal !== null && !isNaN(mainVal)) {
+                        (function () {
+                            var fmtType = layout.props.mainFormatType;
+                            var curSym = layout.props.mainCurrencySymbol;
+                            var mask = layout.props.mainCustomMask;
+                            var durPat = layout.props.mainDurationPattern;
+                            var mInfo = mainMeasureInfo;
+                            animateCountUp($mainValNum[0], mainVal, animDuration, function (v) {
+                                return getFormattedValueForDisplay(v, fmtType, curSym, mask, null, mInfo, durPat);
+                            }, mainFormatted);
+                        })();
                     }
 
-                    $element.html(html);
-
-                    // Add class to parent Qlik containers for scoped CSS targeting
-                    $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').addClass('kpi-extension-wrapper');
-
-                    // CRITICAL: Force parent Qlik containers to fill 100%
-                    // Apply styles directly to ensure they take effect
-                    $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').css({
-                        'width': '100%',
-                        'height': '100%',
-                        'padding': '0',
-                        'margin': '0',
-                        'box-sizing': 'border-box',
-                        'min-width': '0',
-                        'min-height': '0',
-                        'max-width': 'none',
-                        'max-height': 'none'
-                    });
-
-                    // ============================================
-                    // POST-RENDER: Apply CSS classes & confirm sizes
-                    // Font sizes were already calculated BEFORE HTML
-                    // was built and are embedded in the template.
-                    // This section adds responsive CSS classes and
-                    // re-confirms dynamic values on the DOM elements.
-                    // ============================================
-                    const $sizeWrapper = $element.find('.kpi-size-wrapper');
-
-                    // Apply responsive size classes (CSS fallback for @container)
-                    if (sizeClass) $sizeWrapper.addClass(sizeClass);
-                    if (heightClass) $sizeWrapper.addClass(heightClass);
-
-                    // Re-confirm main value color (inline style + JS backup)
-                    const $mainValue = $element.find('.main-value');
-                    if ($mainValue.length > 0) {
-                        const mainValueEl = $mainValue[0];
-                        if (mainValueEl) {
-                            mainValueEl.style.setProperty('font-size', scaledMainFont + 'px', 'important');
-                            mainValueEl.style.setProperty('font-weight', mainValueFontWeight, 'important');
-                            mainValueEl.style.setProperty('color', mainValueColor, 'important');
-                            $mainValue.attr('data-color', mainValueColor);
-                        }
+                    // Comparison values — build parallel arrays of raw values, format fns, and final text
+                    var compRawVals = [], compFmtFuncs = [], compFinalTexts = [];
+                    if (enabledComparisons.includes("left") && leftVal !== null && !isNaN(leftVal)) {
+                        compRawVals.push(leftVal);
+                        compFinalTexts.push(leftFormatted);
+                        (function () {
+                            var ft = layout.props.leftFormatType, cs = layout.props.leftCurrencySymbol;
+                            var cm = layout.props.leftCustomMask, dp = layout.props.leftDurationPattern;
+                            var mi = leftMeasureInfo;
+                            compFmtFuncs.push(function (v) { return getFormattedValueForDisplay(v, ft, cs, cm, null, mi, dp); });
+                        })();
+                    }
+                    if (enabledComparisons.includes("right") && rightVal !== null && !isNaN(rightVal)) {
+                        compRawVals.push(rightVal);
+                        compFinalTexts.push(rightFormatted);
+                        (function () {
+                            var ft = layout.props.rightFormatType, cs = layout.props.rightCurrencySymbol;
+                            var cm = layout.props.rightCustomMask, dp = layout.props.rightDurationPattern;
+                            var mi = rightMeasureInfo;
+                            compFmtFuncs.push(function (v) { return getFormattedValueForDisplay(v, ft, cs, cm, null, mi, dp); });
+                        })();
+                    }
+                    if (enabledComparisons.includes("third") && thirdVal !== null && !isNaN(thirdVal)) {
+                        compRawVals.push(thirdVal);
+                        compFinalTexts.push(thirdFormatted);
+                        (function () {
+                            var ft = layout.props.thirdFormatType, cs = layout.props.thirdCurrencySymbol;
+                            var cm = layout.props.thirdCustomMask, dp = layout.props.thirdDurationPattern;
+                            var mi = thirdMeasureInfo;
+                            compFmtFuncs.push(function (v) { return getFormattedValueForDisplay(v, ft, cs, cm, null, mi, dp); });
+                        })();
                     }
 
-                    // Apply scaled comparison value font sizes
-                    const $compValues = $element.find('.comp-value');
-                    $compValues.each(function () {
-                        this.style.setProperty('font-size', compFontSize + 'px', 'important');
-                    });
-
-                    // Apply scaled comparison title font sizes
-                    const $compTitles = $element.find('.comp-title');
-                    $compTitles.each(function () {
-                        this.style.setProperty('font-size', scaledCompTitleFont + 'px', 'important');
-                    });
-
-                    // Apply scaled arrow sizes
-                    const $compArrows = $element.find('.comp-arrow');
-                    $compArrows.each(function () {
-                        this.style.setProperty('font-size', scaledArrowFont + 'px', 'important');
-                    });
-
-                    // Apply scaled title font
-                    const $kpiTitle = $element.find('.kpi-title');
-                    if ($kpiTitle.length > 0) {
-                        $kpiTitle[0].style.setProperty('font-size', scaledTitleFont + 'px', 'important');
-                    }
-
-                    // ============================================
-                    // COUNT-UP ANIMATION
-                    // ============================================
-                    if (layout.props.enableCountUp !== false) {
-                        var animDuration = parseInt(layout.props.countUpDuration, 10) || 600;
-
-                        // Main value — animate the inner .main-val-num span so prefix/suffix/icon stay stable
-                        var $mainValNum = $element.find('.main-val-num');
-                        if ($mainValNum.length > 0 && mainVal !== null && !isNaN(mainVal)) {
-                            (function () {
-                                var fmtType = layout.props.mainFormatType;
-                                var curSym = layout.props.mainCurrencySymbol;
-                                var mask = layout.props.mainCustomMask;
-                                var durPat = layout.props.mainDurationPattern;
-                                var mInfo = mainMeasureInfo;
-                                animateCountUp($mainValNum[0], mainVal, animDuration, function (v) {
-                                    return getFormattedValueForDisplay(v, fmtType, curSym, mask, null, mInfo, durPat);
-                                }, mainFormatted);
-                            })();
-                        }
-
-                        // Comparison values — build parallel arrays of raw values, format fns, and final text
-                        var compRawVals = [], compFmtFuncs = [], compFinalTexts = [];
-                        if (enabledComparisons.includes("left") && leftVal !== null && !isNaN(leftVal)) {
-                            compRawVals.push(leftVal);
-                            compFinalTexts.push(leftFormatted);
-                            (function () {
-                                var ft = layout.props.leftFormatType, cs = layout.props.leftCurrencySymbol;
-                                var cm = layout.props.leftCustomMask, dp = layout.props.leftDurationPattern;
-                                var mi = leftMeasureInfo;
-                                compFmtFuncs.push(function (v) { return getFormattedValueForDisplay(v, ft, cs, cm, null, mi, dp); });
-                            })();
-                        }
-                        if (enabledComparisons.includes("right") && rightVal !== null && !isNaN(rightVal)) {
-                            compRawVals.push(rightVal);
-                            compFinalTexts.push(rightFormatted);
-                            (function () {
-                                var ft = layout.props.rightFormatType, cs = layout.props.rightCurrencySymbol;
-                                var cm = layout.props.rightCustomMask, dp = layout.props.rightDurationPattern;
-                                var mi = rightMeasureInfo;
-                                compFmtFuncs.push(function (v) { return getFormattedValueForDisplay(v, ft, cs, cm, null, mi, dp); });
-                            })();
-                        }
-                        if (enabledComparisons.includes("third") && thirdVal !== null && !isNaN(thirdVal)) {
-                            compRawVals.push(thirdVal);
-                            compFinalTexts.push(thirdFormatted);
-                            (function () {
-                                var ft = layout.props.thirdFormatType, cs = layout.props.thirdCurrencySymbol;
-                                var cm = layout.props.thirdCustomMask, dp = layout.props.thirdDurationPattern;
-                                var mi = thirdMeasureInfo;
-                                compFmtFuncs.push(function (v) { return getFormattedValueForDisplay(v, ft, cs, cm, null, mi, dp); });
-                            })();
-                        }
-
-                        $compValues.each(function (idx) {
-                            if (idx < compRawVals.length) {
-                                // Isolate the numeric text from arrows/icons/prefix/suffix
-                                var $this = $(this);
-                                var $numSpan = $this.find('.comp-num');
-                                if ($numSpan.length === 0) {
-                                    // Preserve arrows, icons, prefix, suffix — wrap only the bare text node
-                                    var arrowEl = $this.find('.comp-arrow');
-                                    var iconEl = $this.find('.comp-icon');
-                                    var prefixEl = $this.find('.val-prefix');
-                                    var suffixEl = $this.find('.val-suffix');
-                                    var aw = arrowEl.length ? arrowEl[0].outerHTML : '';
-                                    var iw = iconEl.length ? iconEl[0].outerHTML : '';
-                                    var pw = prefixEl.length ? prefixEl[0].outerHTML : '';
-                                    var sw = suffixEl.length ? suffixEl[0].outerHTML : '';
-                                    $this.html(aw + iw + pw + '<span class="comp-num">' + escapeHtml(compFinalTexts[idx]) + '</span>' + sw);
-                                    $numSpan = $this.find('.comp-num');
-                                }
-                                if ($numSpan.length > 0) {
-                                    animateCountUp($numSpan[0], compRawVals[idx], animDuration, compFmtFuncs[idx], compFinalTexts[idx]);
-                                }
+                    $compValues.each(function (idx) {
+                        if (idx < compRawVals.length) {
+                            // Isolate the numeric text from arrows/icons/prefix/suffix
+                            var $this = $(this);
+                            var $numSpan = $this.find('.comp-num');
+                            if ($numSpan.length === 0) {
+                                // Preserve arrows, icons, prefix, suffix — wrap only the bare text node
+                                var arrowEl = $this.find('.comp-arrow');
+                                var iconEl = $this.find('.comp-icon');
+                                var prefixEl = $this.find('.val-prefix');
+                                var suffixEl = $this.find('.val-suffix');
+                                var aw = arrowEl.length ? arrowEl[0].outerHTML : '';
+                                var iw = iconEl.length ? iconEl[0].outerHTML : '';
+                                var pw = prefixEl.length ? prefixEl[0].outerHTML : '';
+                                var sw = suffixEl.length ? suffixEl[0].outerHTML : '';
+                                $this.html(aw + iw + pw + '<span class="comp-num">' + escapeHtml(compFinalTexts[idx]) + '</span>' + sw);
+                                $numSpan = $this.find('.comp-num');
                             }
+                            if ($numSpan.length > 0) {
+                                animateCountUp($numSpan[0], compRawVals[idx], animDuration, compFmtFuncs[idx], compFinalTexts[idx]);
+                            }
+                        }
+                    });
+                }
+
+                // ============================================
+                // MINI CHART TOOLTIP
+                // ============================================
+                if (miniChartSvg && layout.props.showTooltip !== false) {
+                    const tooltip = $("<div class='kpi-tooltip'></div>").appendTo("body");
+                    const svg = $element.find(".miniChart");
+
+                    if (svg.length && matrix.length > 0) {
+                        const hoverLine = svg.find(".miniChart-hover-line");
+
+                        svg.on("mousemove", function (evt) {
+                            const offset = svg.offset();
+                            const svgWidth = svg.width();
+                            if (!svgWidth) return;
+
+                            const relX = evt.pageX - offset.left;
+                            const n = matrix.length;
+                            const index = Math.max(0, Math.min(n - 1, Math.floor((relX / svgWidth) * n)));
+
+                            const row = matrix[index];
+                            if (!row) return;
+
+                            const dim = hasDim ? (row[colDim]?.qText || "") : "";
+                            const val = row[colChart]?.qNum;
+                            const formatted = typeof val === "number" ? val.toLocaleString() : val;
+
+                            tooltip.css({
+                                left: evt.pageX + 12,
+                                top: evt.pageY - 18,
+                                opacity: 1
+                            }).html(dim ? `<b>${dim}</b><br>${formatted}` : formatted);
+
+                            const percentX = n > 1 ? (index / (n - 1)) * 100 : 50;
+                            hoverLine.css("opacity", 1)
+                                .attr("x1", percentX + "%")
+                                .attr("x2", percentX + "%");
+                        });
+
+                        svg.on("mouseleave", function () {
+                            tooltip.css("opacity", 0);
+                            hoverLine.css("opacity", 0);
                         });
                     }
+                }
 
-                    // ============================================
-                    // MINI CHART TOOLTIP
-                    // ============================================
-                    if (miniChartSvg && layout.props.showTooltip !== false) {
-                        const tooltip = $("<div class='kpi-tooltip'></div>").appendTo("body");
-                        const svg = $element.find(".miniChart");
+                // ============================================
+                // INSIGHT EXPRESSION HANDLING
+                // ============================================
+                // NOTE: When using expression: "optional" in the property panel,
+                // Qlik Sense automatically evaluates the expression BEFORE passing it to paint()
+                // - User enters "=Sum(Sales)" → layout.props.tooltipInsightExpression = "12345" (evaluated)
+                // - User enters "My Text" → layout.props.tooltipInsightExpression = "My Text" (as-is)
+                // - No manual evaluation needed - the value is already processed by Qlik
+                //
+                // The insight expression value is already set in flipCardBackContent above,
+                // so no additional processing is needed here.
 
-                        if (svg.length && matrix.length > 0) {
-                            const hoverLine = svg.find(".miniChart-hover-line");
+                // Add event listener for flip card trigger
+                if (isFlipCardMode) {
+                    const $iconTrigger = $element.find(".tooltip-icon-trigger");
+                    const $flipCard = $element.find(".kpi-flip-card");
+                    const $wrapper = $element.find(".kpi-flip-card-wrapper");
 
-                            svg.on("mousemove", function (evt) {
-                                const offset = svg.offset();
-                                const svgWidth = svg.width();
-                                if (!svgWidth) return;
-
-                                const relX = evt.pageX - offset.left;
-                                const n = matrix.length;
-                                const index = Math.max(0, Math.min(n - 1, Math.floor((relX / svgWidth) * n)));
-
-                                const row = matrix[index];
-                                if (!row) return;
-
-                                const dim = hasDim ? (row[colDim]?.qText || "") : "";
-                                const val = row[colChart]?.qNum;
-                                const formatted = typeof val === "number" ? val.toLocaleString() : val;
-
-                                tooltip.css({
-                                    left: evt.pageX + 12,
-                                    top: evt.pageY - 18,
-                                    opacity: 1
-                                }).html(dim ? `<b>${dim}</b><br>${formatted}` : formatted);
-
-                                const percentX = n > 1 ? (index / (n - 1)) * 100 : 50;
-                                hoverLine.css("opacity", 1)
-                                    .attr("x1", percentX + "%")
-                                    .attr("x2", percentX + "%");
+                    if ($flipCard.length) {
+                        if (flipTrigger === "iconClick") {
+                            // Click-to-toggle mode — stays flipped until clicked again
+                            $iconTrigger.on("click", function (e) {
+                                e.stopPropagation();
+                                var isFlipped = $flipCard.attr("data-flipped") === "1";
+                                $flipCard.css("transform", isFlipped ? "rotateY(0deg)" : "rotateY(180deg)");
+                                $flipCard.attr("data-flipped", isFlipped ? "0" : "1");
                             });
-
-                            svg.on("mouseleave", function () {
-                                tooltip.css("opacity", 0);
-                                hoverLine.css("opacity", 0);
+                            // Also allow clicking anywhere on the back to unflip
+                            $element.find(".flip-card-back").on("click", function (e) {
+                                e.stopPropagation();
+                                $flipCard.css("transform", "rotateY(0deg)");
+                                $flipCard.attr("data-flipped", "0");
                             });
-                        }
-                    }
-
-                    // ============================================
-                    // INSIGHT EXPRESSION HANDLING
-                    // ============================================
-                    // NOTE: When using expression: "optional" in the property panel,
-                    // Qlik Sense automatically evaluates the expression BEFORE passing it to paint()
-                    // - User enters "=Sum(Sales)" → layout.props.tooltipInsightExpression = "12345" (evaluated)
-                    // - User enters "My Text" → layout.props.tooltipInsightExpression = "My Text" (as-is)
-                    // - No manual evaluation needed - the value is already processed by Qlik
-                    //
-                    // The insight expression value is already set in flipCardBackContent above,
-                    // so no additional processing is needed here.
-
-                    // Add event listener for flip card trigger
-                    if (isFlipCardMode) {
-                        const $iconTrigger = $element.find(".tooltip-icon-trigger");
-                        const $flipCard = $element.find(".kpi-flip-card");
-                        const $wrapper = $element.find(".kpi-flip-card-wrapper");
-
-                        if ($flipCard.length) {
-                            if (flipTrigger === "iconClick") {
-                                // Click-to-toggle mode — stays flipped until clicked again
-                                $iconTrigger.on("click", function (e) {
-                                    e.stopPropagation();
-                                    var isFlipped = $flipCard.attr("data-flipped") === "1";
-                                    $flipCard.css("transform", isFlipped ? "rotateY(0deg)" : "rotateY(180deg)");
-                                    $flipCard.attr("data-flipped", isFlipped ? "0" : "1");
-                                });
-                                // Also allow clicking anywhere on the back to unflip
-                                $element.find(".flip-card-back").on("click", function (e) {
-                                    e.stopPropagation();
-                                    $flipCard.css("transform", "rotateY(0deg)");
-                                    $flipCard.attr("data-flipped", "0");
-                                });
-                            } else if (flipTrigger === "cardHover") {
-                                // Flip when hovering anywhere on the card
-                                $wrapper.on("mouseenter", function () {
+                        } else if (flipTrigger === "cardHover") {
+                            // Flip when hovering anywhere on the card
+                            $wrapper.on("mouseenter", function () {
+                                $flipCard.css("transform", "rotateY(180deg)");
+                            });
+                            $wrapper.on("mouseleave", function () {
+                                $flipCard.css("transform", "rotateY(0deg)");
+                            });
+                        } else {
+                            // Default: iconHover — flip on icon hover, unflip on card leave
+                            if ($iconTrigger.length) {
+                                $iconTrigger.on("mouseenter", function () {
                                     $flipCard.css("transform", "rotateY(180deg)");
                                 });
                                 $wrapper.on("mouseleave", function () {
                                     $flipCard.css("transform", "rotateY(0deg)");
                                 });
-                            } else {
-                                // Default: iconHover — flip on icon hover, unflip on card leave
-                                if ($iconTrigger.length) {
-                                    $iconTrigger.on("mouseenter", function () {
-                                        $flipCard.css("transform", "rotateY(180deg)");
-                                    });
-                                    $wrapper.on("mouseleave", function () {
-                                        $flipCard.css("transform", "rotateY(0deg)");
-                                    });
-                                }
                             }
                         }
                     }
-
-                    // ============================================
-                    // EVALUATE TITLE EXPRESSIONS IF NEEDED
-                    // ============================================
-                    var backendApiRef = getBackendApi(this, $element, layout);
-                    var selfRef = this;
-
-                    // Main title
-                    if (needsEvaluation && titleExpression && titleExpression.trim() !== "") {
-                        try {
-                            var mainEvalPromise = resolveExpression(titleExpression, backendApiRef, $element, layout);
-                            if (mainEvalPromise) {
-                                mainEvalPromise.then(function (result) {
-                                    var evaluatedTitle = extractEvalResult(result, titleExpression);
-                                    var escaped = escapeHtml(evaluatedTitle);
-                                    var $titleEl = $element.find('.kpi-title');
-                                    var $headerEl = $element.find('.kpi-header');
-                                    if ($titleEl.length > 0) {
-                                        $titleEl.html(escaped);
-                                        if ($headerEl.length > 0) $headerEl.show();
-                                    } else if (evaluatedTitle && String(evaluatedTitle).trim() !== "") {
-                                        // Create header dynamically
-                                        var fs = layout.props.mainTitleFontSize || 14;
-                                        var fw = layout.props.mainTitleFontWeight || "500";
-                                        var align = layout.props.mainTitleAlignment || "left";
-                                        var ha = align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start";
-                                        var iPos = layout.props.mainIconPosition || "left";
-                                        var iUrl = layout.props.titleIcon;
-                                        var iSize = layout.props.mainIconSize || 20;
-                                        var iHtml = iUrl ? '<img class="title-icon" src="' + iUrl + '" style="width:' + iSize + 'px;height:' + iSize + 'px;" alt="">' : "";
-                                        var titleSpan = '<div class="kpi-title-group"><span class="kpi-title" style="font-size:' + fs + 'px;font-weight:' + fw + ';">' + escaped + '</span></div>';
-                                        var hc = iPos === "right"
-                                            ? titleSpan + iHtml
-                                            : iHtml + titleSpan;
-                                        var $mv = $element.find('.main-value');
-                                        if ($mv.length > 0) {
-                                            $mv.before('<div class="kpi-header ' + (iPos === "top" ? "icon-top" : "") + '" data-align="' + align + '" style="justify-content:' + ha + ';">' + hc + '</div>');
-                                        }
-                                    }
-                                }).catch(function () { /* ignore */ });
-                            } else if (titleExpression.trim() !== "") {
-                                // No API available — show cleaned-up expression text
-                                var $titleEl = $element.find('.kpi-title');
-                                if ($titleEl.length > 0) {
-                                    $titleEl.html(escapeHtml(titleExpression));
-                                }
-                            }
-                        } catch (_) { /* ignore */ }
-                    }
-
-                    // Subtitle expression evaluation
-                    if (subtitleParsed.needsEval && subtitleParsed.expression && subtitleParsed.expression.trim() !== "") {
-                        try {
-                            var subEvalPromise = resolveExpression(subtitleParsed.expression, backendApiRef, $element, layout);
-                            if (subEvalPromise) {
-                                subEvalPromise.then(function (result) {
-                                    var evaluatedSub = extractEvalResult(result, subtitleParsed.expression);
-                                    var escaped = escapeHtml(evaluatedSub);
-                                    var $subEl = $element.find('.kpi-subtitle');
-                                    if ($subEl.length > 0) {
-                                        $subEl.html(escaped);
-                                    } else if (evaluatedSub && String(evaluatedSub).trim() !== "") {
-                                        // Create subtitle element dynamically inside title-group
-                                        var $titleGroup = $element.find('.kpi-title-group');
-                                        if ($titleGroup.length > 0) {
-                                            $titleGroup.append('<span class="kpi-subtitle" style="font-size:' + subtitleFontSize + 'px;color:' + subtitleColor + ';">' + escaped + '</span>');
-                                        }
-                                    }
-                                }).catch(function () { /* ignore */ });
-                            }
-                        } catch (_) { /* ignore */ }
-                    }
-
-                    // Comparison titles
-                    comparisonSides.forEach(function (side) {
-                        if (!evaluatedTitles[side] || !evaluatedTitles[side].needsEval || !evaluatedTitles[side].expr) return;
-                        var titleExpr = evaluatedTitles[side].expr;
-                        try {
-                            var promise = resolveExpression(titleExpr, backendApiRef, $element, layout);
-                            if (promise) {
-                                promise.then(function (result) {
-                                    var evaluated = extractEvalResult(result, titleExpr);
-                                    var escaped = escapeHtml(evaluated);
-                                    var enabledOrder = [];
-                                    if (layout.props.enableLeft !== false) enabledOrder.push("left");
-                                    if (layout.props.enableRight !== false) enabledOrder.push("right");
-                                    if (layout.props.enableThird === true) enabledOrder.push("third");
-                                    var idx = enabledOrder.indexOf(side);
-                                    if (idx >= 0) {
-                                        var $blocks = $element.find('.comp-block');
-                                        if ($blocks.length > idx) {
-                                            $($blocks[idx]).find('.comp-title').html(escaped);
-                                        }
-                                    }
-                                }).catch(function () { /* ignore */ });
-                            }
-                        } catch (_) { /* ignore */ }
-                    });
-
-                    // Conditional Background Color
-                    var condBgExpr = layout.props.conditionalBgColor;
-                    if (condBgExpr && typeof condBgExpr === "string" && condBgExpr.trim().substring(0, 1) === "=") {
-                        var bgExpr = condBgExpr.trim().substring(1);
-                        try {
-                            var bgPromise = resolveExpression(bgExpr, backendApiRef, $element, layout);
-                            if (bgPromise) {
-                                bgPromise.then(function (result) {
-                                    var evaluatedColor = extractEvalResult(result, null);
-                                    if (evaluatedColor && evaluatedColor !== "NaN" && evaluatedColor !== "undefined") {
-                                        var finalBg = fixColor(evaluatedColor, null);
-                                        if (finalBg) {
-                                            $element[0].style.setProperty("--kpi-bg-color", finalBg, "important");
-                                            var $container = $element.find('.kpi-container');
-                                            // Override background with !important to defeat inline styles
-                                            $container.css("background", finalBg + " !important");
-                                        }
-                                    }
-                                }).catch(function () { /* ignore */ });
-                            }
-                        } catch (_) { /* ignore */ }
-                    }
-
-                    // ============================================
-                    // CLICK ACTION / NAVIGATION
-                    // ============================================
-                    var clickActionType = layout.props.clickActionType || "none";
-                    if (clickActionType !== "none") {
-                        var $container = $element.find('.kpi-container');
-                        $container.addClass('kpi-clickable');
-                        $container.off('click.kpiNav').on('click.kpiNav', function (e) {
-                            // Don't navigate when clicking flip card triggers or other interactive elements
-                            if ($(e.target).closest('.tooltip-icon-trigger, .flip-card-back').length) return;
-
-                            if (clickActionType === "gotoSheet") {
-                                var sheetId = layout.props.clickSheetId;
-                                if (sheetId && sheetId.trim() !== "") {
-                                    try {
-                                        qlik.navigation.gotoSheet(sheetId.trim());
-                                    } catch (navErr) {
-                                        console.warn("[ModernKPI] Navigation error:", navErr);
-                                    }
-                                }
-                            } else if (clickActionType === "openUrl") {
-                                var url = layout.props.clickUrl;
-                                if (url && url.trim() !== "") {
-                                    var newTab = layout.props.clickUrlNewTab !== false;
-                                    if (newTab) {
-                                        window.open(url.trim(), '_blank');
-                                    } else {
-                                        window.location.href = url.trim();
-                                    }
-                                }
-                            }
-                        });
-                    }
-
-                } catch (paintError) {
-                    // ============================================
-                    // ERROR BOUNDARY — render clean error state
-                    // ============================================
-                    console.error("[ModernKPI] paint error:", paintError);
-                    var errBg = (layout && layout.props && layout.props.bgColor) ? fixColor(layout.props.bgColor, "#ffffff") : "#ffffff";
-                    var errRadius = (layout && layout.props && layout.props.borderRadius != null) ? layout.props.borderRadius : 5;
-                    $element.html(
-                        '<div class="kpi-size-wrapper">' +
-                        '<div class="kpi-container kpi-error-state" style="' +
-                        'background:' + errBg + ';' +
-                        'border-radius:' + errRadius + 'px;' +
-                        'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
-                        'height:100%;padding:16px;box-sizing:border-box;' +
-                        '">' +
-                        '<span class="kpi-error-icon">⚠️</span>' +
-                        '<span class="kpi-error-msg">Unable to render KPI</span>' +
-                        '<span class="kpi-error-detail">' + escapeHtml(String(paintError.message || paintError).substring(0, 120)) + '</span>' +
-                        '</div>' +
-                        '</div>'
-                    );
                 }
 
-                return qlik.Promise.resolve();
+                // ============================================
+                // EVALUATE TITLE EXPRESSIONS IF NEEDED
+                // ============================================
+                var backendApiRef = getBackendApi(this, $element, layout);
+                var selfRef = this;
+
+                // Main title
+                if (needsEvaluation && titleExpression && titleExpression.trim() !== "") {
+                    try {
+                        var mainEvalPromise = resolveExpression(titleExpression, backendApiRef, $element, layout);
+                        if (mainEvalPromise) {
+                            mainEvalPromise.then(function (result) {
+                                var evaluatedTitle = extractEvalResult(result, titleExpression);
+                                var escaped = escapeHtml(evaluatedTitle);
+                                var $titleEl = $element.find('.kpi-title');
+                                var $headerEl = $element.find('.kpi-header');
+                                if ($titleEl.length > 0) {
+                                    $titleEl.html(escaped);
+                                    if ($headerEl.length > 0) $headerEl.show();
+                                } else if (evaluatedTitle && String(evaluatedTitle).trim() !== "") {
+                                    // Create header dynamically
+                                    var fs = layout.props.mainTitleFontSize || 14;
+                                    var fw = layout.props.mainTitleFontWeight || "500";
+                                    var align = layout.props.mainTitleAlignment || "left";
+                                    var ha = align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start";
+                                    var iPos = layout.props.mainIconPosition || "left";
+                                    var iUrl = layout.props.titleIcon;
+                                    var iSize = layout.props.mainIconSize || 20;
+                                    var iHtml = iUrl ? '<img class="title-icon" src="' + iUrl + '" style="width:' + iSize + 'px;height:' + iSize + 'px;" alt="">' : "";
+                                    var titleSpan = '<div class="kpi-title-group"><span class="kpi-title" style="font-size:' + fs + 'px;font-weight:' + fw + ';">' + escaped + '</span></div>';
+                                    var hc = iPos === "right"
+                                        ? titleSpan + iHtml
+                                        : iHtml + titleSpan;
+                                    var $mv = $element.find('.main-value');
+                                    if ($mv.length > 0) {
+                                        $mv.before('<div class="kpi-header ' + (iPos === "top" ? "icon-top" : "") + '" data-align="' + align + '" style="justify-content:' + ha + ';">' + hc + '</div>');
+                                    }
+                                }
+                            }).catch(function () { /* ignore */ });
+                        } else if (titleExpression.trim() !== "") {
+                            // No API available — show cleaned-up expression text
+                            var $titleEl = $element.find('.kpi-title');
+                            if ($titleEl.length > 0) {
+                                $titleEl.html(escapeHtml(titleExpression));
+                            }
+                        }
+                    } catch (_) { /* ignore */ }
+                }
+
+                // Subtitle expression evaluation
+                if (subtitleParsed.needsEval && subtitleParsed.expression && subtitleParsed.expression.trim() !== "") {
+                    try {
+                        var subEvalPromise = resolveExpression(subtitleParsed.expression, backendApiRef, $element, layout);
+                        if (subEvalPromise) {
+                            subEvalPromise.then(function (result) {
+                                var evaluatedSub = extractEvalResult(result, subtitleParsed.expression);
+                                var escaped = escapeHtml(evaluatedSub);
+                                var $subEl = $element.find('.kpi-subtitle');
+                                if ($subEl.length > 0) {
+                                    $subEl.html(escaped);
+                                } else if (evaluatedSub && String(evaluatedSub).trim() !== "") {
+                                    // Create subtitle element dynamically inside title-group
+                                    var $titleGroup = $element.find('.kpi-title-group');
+                                    if ($titleGroup.length > 0) {
+                                        $titleGroup.append('<span class="kpi-subtitle" style="font-size:' + subtitleFontSize + 'px;color:' + subtitleColor + ';">' + escaped + '</span>');
+                                    }
+                                }
+                            }).catch(function () { /* ignore */ });
+                        }
+                    } catch (_) { /* ignore */ }
+                }
+
+                // Comparison titles
+                comparisonSides.forEach(function (side) {
+                    if (!evaluatedTitles[side] || !evaluatedTitles[side].needsEval || !evaluatedTitles[side].expr) return;
+                    var titleExpr = evaluatedTitles[side].expr;
+                    try {
+                        var promise = resolveExpression(titleExpr, backendApiRef, $element, layout);
+                        if (promise) {
+                            promise.then(function (result) {
+                                var evaluated = extractEvalResult(result, titleExpr);
+                                var escaped = escapeHtml(evaluated);
+                                var enabledOrder = [];
+                                if (layout.props.enableLeft !== false) enabledOrder.push("left");
+                                if (layout.props.enableRight !== false) enabledOrder.push("right");
+                                if (layout.props.enableThird === true) enabledOrder.push("third");
+                                var idx = enabledOrder.indexOf(side);
+                                if (idx >= 0) {
+                                    var $blocks = $element.find('.comp-block');
+                                    if ($blocks.length > idx) {
+                                        $($blocks[idx]).find('.comp-title').html(escaped);
+                                    }
+                                }
+                            }).catch(function () { /* ignore */ });
+                        }
+                    } catch (_) { /* ignore */ }
+                });
+
+                // Conditional Background Color
+                var condBgExpr = layout.props.conditionalBgColor;
+                if (condBgExpr && typeof condBgExpr === "string" && condBgExpr.trim().substring(0, 1) === "=") {
+                    var bgExpr = condBgExpr.trim().substring(1);
+                    try {
+                        var bgPromise = resolveExpression(bgExpr, backendApiRef, $element, layout);
+                        if (bgPromise) {
+                            bgPromise.then(function (result) {
+                                var evaluatedColor = extractEvalResult(result, null);
+                                if (evaluatedColor && evaluatedColor !== "NaN" && evaluatedColor !== "undefined") {
+                                    var finalBg = fixColor(evaluatedColor, null);
+                                    if (finalBg) {
+                                        $element[0].style.setProperty("--kpi-bg-color", finalBg, "important");
+                                        var $container = $element.find('.kpi-container');
+                                        // Override background with !important to defeat inline styles
+                                        $container.css("background", finalBg + " !important");
+                                    }
+                                }
+                            }).catch(function () { /* ignore */ });
+                        }
+                    } catch (_) { /* ignore */ }
+                }
+
+                // ============================================
+                // CLICK ACTION / NAVIGATION
+                // ============================================
+                var clickActionType = layout.props.clickActionType || "none";
+                if (clickActionType !== "none") {
+                    var $container = $element.find('.kpi-container');
+                    $container.addClass('kpi-clickable');
+                    $container.off('click.kpiNav').on('click.kpiNav', function (e) {
+                        // Don't navigate when clicking flip card triggers or other interactive elements
+                        if ($(e.target).closest('.tooltip-icon-trigger, .flip-card-back').length) return;
+
+                        if (clickActionType === "gotoSheet") {
+                            var sheetId = layout.props.clickSheetId;
+                            if (sheetId && sheetId.trim() !== "") {
+                                try {
+                                    qlik.navigation.gotoSheet(sheetId.trim());
+                                } catch (navErr) {
+                                    console.warn("[ModernKPI] Navigation error:", navErr);
+                                }
+                            }
+                        } else if (clickActionType === "openUrl") {
+                            var url = layout.props.clickUrl;
+                            if (url && url.trim() !== "") {
+                                var newTab = layout.props.clickUrlNewTab !== false;
+                                if (newTab) {
+                                    window.open(url.trim(), '_blank');
+                                } else {
+                                    window.location.href = url.trim();
+                                }
+                            }
+                        }
+                    });
+                }
+
+            } catch (paintError) {
+                // ============================================
+                // ERROR BOUNDARY — render clean error state
+                // ============================================
+                console.error("[ModernKPI] paint error:", paintError);
+                var errBg = (layout && layout.props && layout.props.bgColor) ? fixColor(layout.props.bgColor, "#ffffff") : "#ffffff";
+                var errRadius = (layout && layout.props && layout.props.borderRadius != null) ? layout.props.borderRadius : 5;
+                $element.html(
+                    '<div class="kpi-size-wrapper">' +
+                    '<div class="kpi-container kpi-error-state" style="' +
+                    'background:' + errBg + ';' +
+                    'border-radius:' + errRadius + 'px;' +
+                    'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+                    'height:100%;padding:16px;box-sizing:border-box;' +
+                    '">' +
+                    '<span class="kpi-error-icon">⚠️</span>' +
+                    '<span class="kpi-error-msg">Unable to render KPI</span>' +
+                    '<span class="kpi-error-detail">' + escapeHtml(String(paintError.message || paintError).substring(0, 120)) + '</span>' +
+                    '</div>' +
+                    '</div>'
+                );
             }
-        };
-    });
+
+            return qlik.Promise.resolve();
+        }
+    };
+});
