@@ -10,11 +10,19 @@ Whether you need a simple number, a comparison against a target, or a complex ca
 
 ## 📸 Showcase
 
-| **Modern KPI Card** | **Animated Demo** |
-| :---: | :---: |
-| ![Modern KPI Showcase](docs/images/showcase.png) | ![Modern KPI Demo](docs/images/demo.gif) |
+### 1. Standard KPI
+Clean and professional layout focusing on the main metric with comparison values.
+![Standard KPI](docs/images/kpi_standard.png)
 
-> **💡 TIP:** You can add more comparison images to the `docs/images` folder to show different styles!
+### 2. Bar Chart & Interactive Flip Card
+Combine trends with deep-dive storytelling. Click the icon to flip the card for detailed insights.
+![Bar Chart & Flip Card](docs/images/demo.gif)
+*(Example shows bar chart integration and interactive flip animation)*
+
+### 3. Line Chart & Conditional Background
+Visual context with trend lines and dynamic background colors that react to your data performance.
+![Line Chart & Conditional](docs/images/kpi_line_conditional.png)
+*(Background dynamically turns red/green based on set thresholds)*
 
 ---
 
