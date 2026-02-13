@@ -12,9 +12,9 @@ Whether you need a simple number, a comparison against a target, or a complex ca
 
 | **Responsive Layouts** | **Comparison KPIs** | **Mini Charts & Insights** |
 | :---: | :---: | :---: |
-| ![Responsive KPI](https://via.placeholder.com/300x200?text=Responsive+Layout) | ![Comparison KPI](https://via.placeholder.com/300x200?text=Comparison+KPIs) | ![Chart KPI](https://via.placeholder.com/300x200?text=Mini+Charts) |
+| ![Responsive KPI](docs/images/responsive.png) | ![Comparison KPI](docs/images/comparison.png) | ![Chart KPI](docs/images/chart.png) |
 
-> **💡 DEMO:** Insert your extension GIF here to show it in action!
+> **💡 DEMO:** Save your GIF as `demo.gif` and put it in the `docs/images` folder!
 > 
 > ![Modern KPI Demo](docs/images/demo.gif)
 
