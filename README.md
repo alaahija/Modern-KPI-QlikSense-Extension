@@ -12,6 +12,7 @@ Whether you need a simple number, a comparison against a target, or a complex ca
 
 ### 1. Standard KPI
 Clean and professional layout focusing on the main metric with comparison values.
+
 ![Standard KPI](docs/images/kpi_standard.png)
 
 ### 2. Bar Chart & Interactive Flip Card
