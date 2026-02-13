@@ -953,6 +953,31 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
         // Store backendApi reference for expression evaluation
         backendApi: null,
 
+        // Controller to auto-repair corrupted measures on load
+        controller: ["$scope", function ($scope) {
+            // Check for broken measures (null entries or missing structure) and fix them
+            if ($scope.backendApi && $scope.backendApi.getProperties) {
+                $scope.backendApi.getProperties().then(function (props) {
+                    var changed = false;
+                    if (props.qHyperCubeDef && props.qHyperCubeDef.qMeasures) {
+                        var measures = props.qHyperCubeDef.qMeasures;
+                        for (var i = 0; i < measures.length; i++) {
+                            // If measure is null or missing critical structure
+                            if (!measures[i] || !measures[i].qDef || !measures[i].qValueExpression) {
+                                // Repair it using our safe structure generator
+                                measures[i] = ensureMeasureStructure(measures[i] || null);
+                                changed = true;
+                            }
+                        }
+                    }
+                    if (changed) {
+                        console.log("[ModernKPI] Auto-repaired corrupted measures.");
+                        $scope.backendApi.setProperties(props);
+                    }
+                });
+            }
+        }],
+
         initialProperties: {
             qHyperCubeDef: {
                 // Start with empty dimensions - will be added via native Qlik Sense panel when user clicks "Add"
@@ -1131,6 +1156,12 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
             }
             if (!Array.isArray(props.qHyperCubeDef.qMeasures)) {
                 props.qHyperCubeDef.qMeasures = [];
+            }
+            // IMMEDIATE CLEANUP of any nulls to prevent isLocked() crashes
+            for (var i = 0; i < props.qHyperCubeDef.qMeasures.length; i++) {
+                if (!props.qHyperCubeDef.qMeasures[i]) {
+                    props.qHyperCubeDef.qMeasures[i] = ensureMeasureStructure(null);
+                }
             }
             // Ensure at least one measure exists (for main KPI measure)
             if (props.qHyperCubeDef.qMeasures.length === 0) {
