@@ -608,8 +608,8 @@
 }
 
 /* Ensure tooltip icon doesn't affect layout when present or absent */
-.kpi-container>.kpi-tooltip-icon-wrapper,
-.kpi-container>.tooltip-icon-trigger {
+.kpi-container .kpi-tooltip-icon-wrapper,
+.kpi-container .tooltip-icon-trigger {
     position: absolute !important;
     top: 12px !important;
     right: 12px !important;

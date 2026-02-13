@@ -2373,12 +2373,35 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
             // This prevents raw expression strings from breaking the HTML/CSS
             if (layout.props.conditionalBgColor && typeof layout.props.conditionalBgColor === 'string' && layout.props.conditionalBgColor.trim().charAt(0) === '=') {
                 try {
-                    const app = qlik.currApp(this);
-                    const expr = layout.props.conditionalBgColor;
-                    // Evaluate the expression against the app (global scope)
-                    // This handles aggregations like Sum, Max, etc.
-                    const evalResult = await app.evaluate(expr);
-                    layout.props.conditionalBgColor = evalResult;
+                    const app = qlik.currApp(this) || qlik.currApp($element);
+                    let expr = layout.props.conditionalBgColor;
+
+                    // Sanitize: Remove // comments which cause syntax errors in Qlik expressions
+                    expr = expr.replace(/\/\/.*$/gm, '');
+
+                    // Evaluate using a temporary generic object (Standard Qlik API)
+                    // app.evaluate() is not reliably available in all versions
+                    if (app && app.createGenericObject) {
+                        try {
+                            const sessionObj = await app.createGenericObject({
+                                customColor: {
+                                    qStringExpression: expr
+                                }
+                            });
+                            const sessionLayout = await sessionObj.getLayout();
+                            const resultColor = sessionLayout.customColor;
+
+                            // Cleanup session object to prevent memory leaks
+                            if (app.destroySessionObject) {
+                                app.destroySessionObject(sessionObj.id);
+                            }
+
+                            layout.props.conditionalBgColor = resultColor;
+                        } catch (err) {
+                            console.error("ModernKPI: Error in createGenericObject", err);
+                            throw err;
+                        }
+                    }
                 } catch (e) {
                     console.error("ModernKPI: Error evaluating conditional background", e);
                     // Nullify to prevent broken HTML from raw string
