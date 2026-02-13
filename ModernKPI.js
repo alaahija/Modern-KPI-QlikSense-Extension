@@ -1,5 +1,5 @@
 define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
-    'use strict';
+
 
     /**
      * @file ModernKPI.js
@@ -2306,10 +2306,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                             component: "text"
                         },
                         paragraph4: {
-                            paragraph4: {
-                                label: "Version: 2.0.0",
-                                component: "text"
-                            }
+                            label: "Version: 2.0.0",
+                            component: "text"
                         }
                     }
                 }
@@ -3254,7 +3252,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                             <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass} kpi-flip-card" style="${cardStyle}">
                                 <div class="flip-card-front-content">
                                     ${tooltipIconHtml}
-                                    ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" style="justify-content:${headerAlignment};">
+                                    ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" style="justify-content:${headerAlignment} !important; width: 100%; display: flex;">
                                         ${headerContent}
                                     </div>` : ""}
                                     <div class="main-value ${mainValueAlignClass}" style="
@@ -3281,7 +3279,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     <div class="kpi-size-wrapper">
                         <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass}" style="${cardStyle}">
                             ${tooltipIconHtml}
-                            ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" style="justify-content:${headerAlignment};">
+                            ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" style="justify-content:${headerAlignment} !important; width: 100%; display: flex;">
                                 ${headerContent}
                             </div>` : ""}
                             <div class="main-value ${mainValueAlignClass}" style="
