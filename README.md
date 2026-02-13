@@ -12,6 +12,7 @@ Whether you need a simple number, a comparison against a target, or a complex ca
 
 ### 1. Standard KPI
 Clean and professional layout focusing on the main metric with comparison values.
+
 ![Standard KPI](docs/images/kpi_standard.png)
 
 ### 2. Bar Chart & Interactive Flip Card
@@ -22,6 +23,7 @@ Combine trends with deep-dive storytelling. Click the icon to flip the card for 
 ### 3. Line Chart & Conditional Background
 Visual context with trend lines and dynamic background colors that react to your data performance.
 ![Line Chart & Conditional](docs/images/kpi_line_conditional.png)
+
 *(Background dynamically turns red/green based on set thresholds)*
 
 ---
@@ -37,7 +39,7 @@ Visual context with trend lines and dynamic background colors that react to your
  | **Conditional Styling** | Set colors for backgrounds, values, and text dynamically using powerful Qlik expressions. |
  | **Advanced Formatting** | Full control over number formats including **K/M/B** scaling, **Currency**, **Percentage**, and **Duration** (e.g., `123:45:00`). |
  | **Interactions** | Click actions to navigate to other sheets or open external URLs. |
- | **Export Ready** | Fully supports native **Snapshots**, **Stories**, and **Export to Image/PDF** features. |
+ 
 
 ---
 
