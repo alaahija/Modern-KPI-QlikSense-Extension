@@ -1134,7 +1134,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
             }
             // Ensure at least one measure exists (for main KPI measure)
             if (props.qHyperCubeDef.qMeasures.length === 0) {
-                props.qHyperCubeDef.qMeasures.push(null); // will be fixed by ensureMeasureStructure
+                props.qHyperCubeDef.qMeasures.push(ensureMeasureStructure(null));
             }
 
             // Ensure measure slots exist for all features that reference specific indices:
@@ -1162,7 +1162,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
             }
 
             while (props.qHyperCubeDef.qMeasures.length < requiredSlots) {
-                props.qHyperCubeDef.qMeasures.push(null);
+                props.qHyperCubeDef.qMeasures.push(ensureMeasureStructure(null));
             }
 
             // Normalise every measure in one pass (creates fresh defaults for null entries)
