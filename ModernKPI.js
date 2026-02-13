@@ -2919,8 +2919,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 const mainTextLen = String(mainFormatted).replace(/<[^>]*>/g, '').trim().length || 1;
 
                 // Constraint 1: Height cap — value gets 1/heightDiv of card height
-                // More comparisons = less room for the value
-                const heightDiv = visibleCompCount > 0 ? (autoFitMainValue ? 5 : 7.5) : (autoFitMainValue ? 2.2 : 3.5);
+                // Adjusted for increased margins (8px) - slightly stricter divisors
+                const heightDiv = visibleCompCount > 0 ? (autoFitMainValue ? 5.5 : 8.5) : (autoFitMainValue ? 2.5 : 4.0);
                 const heightCap = cardHeight / heightDiv;
 
                 // Constraint 2: Text-width cap — value must fit horizontally
