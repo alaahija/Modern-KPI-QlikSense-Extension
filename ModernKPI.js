@@ -2352,7 +2352,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
         // This is called by Qlik Sense when the extension is created
         // Note: backendApi is provided by Qlik Sense, not defined by us
 
-        paint: function ($element, layout) {
+        paint: async function ($element, layout) {
             // CRITICAL: Ensure root $element fills 100% width and height
             // This is the root div that Qlik Sense passes to the extension
             $element.css({
@@ -2368,6 +2368,23 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 'display': 'block',
                 'position': 'relative'
             });
+
+            // Evaluate conditional background expression if present
+            // This prevents raw expression strings from breaking the HTML/CSS
+            if (layout.props.conditionalBgColor && typeof layout.props.conditionalBgColor === 'string' && layout.props.conditionalBgColor.trim().charAt(0) === '=') {
+                try {
+                    const app = qlik.currApp(this);
+                    const expr = layout.props.conditionalBgColor;
+                    // Evaluate the expression against the app (global scope)
+                    // This handles aggregations like Sum, Max, etc.
+                    const evalResult = await app.evaluate(expr);
+                    layout.props.conditionalBgColor = evalResult;
+                } catch (e) {
+                    console.error("ModernKPI: Error evaluating conditional background", e);
+                    // Nullify to prevent broken HTML from raw string
+                    layout.props.conditionalBgColor = null;
+                }
+            }
 
             try {
                 // Store backendApi reference if available (Qlik Sense provides this)
