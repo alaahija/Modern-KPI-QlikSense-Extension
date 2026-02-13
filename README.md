@@ -10,13 +10,11 @@ Whether you need a simple number, a comparison against a target, or a complex ca
 
 ## 📸 Showcase
 
-| **Responsive Layouts** | **Comparison KPIs** | **Mini Charts & Insights** |
-| :---: | :---: | :---: |
-| ![Responsive KPI](docs/images/responsive.png) | ![Comparison KPI](docs/images/comparison.png) | ![Chart KPI](docs/images/chart.png) |
+| **Modern KPI Card** | **Animated Demo** |
+| :---: | :---: |
+| ![Modern KPI Showcase](docs/images/showcase.png) | ![Modern KPI Demo](docs/images/demo.gif) |
 
-> **💡 DEMO:** Save your GIF as `demo.gif` and put it in the `docs/images` folder!
-> 
-> ![Modern KPI Demo](docs/images/demo.gif)
+> **💡 TIP:** You can add more comparison images to the `docs/images` folder to show different styles!
 
 ---
 
