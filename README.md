@@ -22,6 +22,7 @@ Combine trends with deep-dive storytelling. Click the icon to flip the card for 
 ### 3. Line Chart & Conditional Background
 Visual context with trend lines and dynamic background colors that react to your data performance.
 ![Line Chart & Conditional](docs/images/kpi_line_conditional.png)
+
 *(Background dynamically turns red/green based on set thresholds)*
 
 ---
