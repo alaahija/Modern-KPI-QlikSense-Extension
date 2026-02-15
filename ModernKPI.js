@@ -3324,8 +3324,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     <div class="kpi-size-wrapper">
                         <div class="kpi-flip-card-wrapper">
                             <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass} kpi-flip-card" style="${cardStyle}">
+                                ${tooltipIconHtml}
                                 <div class="flip-card-front-content">
-                                    ${tooltipIconHtml}
                                     ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" style="justify-content:${headerAlignment} !important; width: 100%; display: flex;">
                                         ${headerContent}
                                     </div>` : ""}

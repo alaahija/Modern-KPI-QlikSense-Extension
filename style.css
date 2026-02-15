@@ -623,6 +623,24 @@
     height: auto;
 }
 
+/* Fix icon position when inside flip card mode */
+.kpi-flip-card .tooltip-icon-trigger,
+.kpi-flip-card .kpi-tooltip-icon-wrapper {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    z-index: 1000 !important;
+}
+
+/* Ensure flip card wrapper doesn't affect icon positioning */
+.flip-card-front-content .tooltip-icon-trigger,
+.flip-card-front-content .kpi-tooltip-icon-wrapper {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+}
+
+
 /* When NOT in flip card mode, ensure container content maintains layout */
 .kpi-container:not(.kpi-flip-card) {
     display: flex;
