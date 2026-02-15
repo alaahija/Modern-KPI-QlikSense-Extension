@@ -88,6 +88,23 @@ Most color properties support Qlik expressions.
 *   **Mini Charts:** Use a "Sparkline" for a minimalist trend view, or a "Bar Chart" for precise period comparisons.
 *   **Responsive Goals:** The extension is built with CSS Container Queries, meaning it looks great whether it's a tiny tile or a full-screen object.
 
+### ⚠️ Recommended Card Sizing for Chart + Comparison Mode
+
+When using **Mini Chart + Comparison Values together** ("Both" mode), ensure your KPI card has adequate space to prevent content overlap.
+
+**Minimum Recommended Dimensions:**
+*   **Width:** 280px+ (350px recommended)
+*   **Height:** 200px+ (250px recommended for 15.6" screens)
+
+**Common Issue:** On smaller screens or compact card sizes, the chart's X-axis labels may overlap with comparison values below.
+
+**Solutions if you see overlap:**
+1.  **Increase card height** to 250px or larger
+2.  **Switch mode:** Use "Chart Only" or "Comparison Only" instead of "Both"
+3.  **Use Sparkline:** Requires less vertical space than bar/line charts
+4.  **Hide X-Axis labels** in chart settings if not essential
+5.  **Dashboard design tip:** For dense layouts, use comparison-only KPIs on the main sheet and save detailed charts for drill-down sheets
+
 ---
 
 ## ❓ Troubleshooting
@@ -98,6 +115,9 @@ Most color properties support Qlik expressions.
 **Q: The chart isn't showing.**
 *   A: Make sure you have added a **Dimension** (usually Date or Month) and at least **2 Measures** (Main Value + Chart Value).
 
+**Q: Chart labels overlap with comparison values.**
+*   A: Your KPI card is too small for "Both" mode. Increase the card height to **250px minimum** or switch to "Chart Only"/"Comparison Only" mode. See **Recommended Card Sizing** section above.
+
 **Q: Icons aren't loading.**
 *   A: If using external URL icons, ensure your Qlik Sense server (or Qlik Cloud) allows content from that domain in the **Content Security Policy (CSP)** settings.
 
@@ -107,7 +127,12 @@ Most color properties support Qlik expressions.
 MIT License - feel free to use and modify!
 
 **Author:** Ala Aldin Hija
-**Version:** 2.0.0a **Display Mode**: Comparison KPIs, Mini Chart, Both, or None.
+**Version:** 2.0.0
+
+## Quick Start
+1. Add the **Main KPI** measure.
+2. Optionally add a **Chart measure** and **Dimension** (e.g., Month).
+3. Configure **Display Mode**: Comparison KPIs, Mini Chart, Both, or None.
 4. Optionally add a **Click Action** (Go to Sheet / Open URL) in the Interactions section.
 5. Style with colors, gradients, shadows, and conditional background expressions.
 
@@ -143,7 +168,7 @@ Expression field returning a CSS color (e.g., `=If(Sum(Sales)>100000, '#4CAF50',
 
 ---
 
-## Troubleshooting
+## Additional Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
