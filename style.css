@@ -2025,3 +2025,25 @@ div:has(> .kpi-container) {
     transform: translateY(0);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
+/* ============================================
+   FLIP CARD ICON VISIBILITY
+   ============================================ */
+/* Hide the tooltip info icon when the card is flipped to the back */
+.kpi-flip-card[data-flipped="1"] .tooltip-icon-trigger,
+.kpi-flip-card[data-flipped="1"] .kpi-tooltip-icon-wrapper,
+.kpi-container[data-flipped="1"] .tooltip-icon-trigger,
+.kpi-container[data-flipped="1"] .kpi-tooltip-icon-wrapper {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* Also hide when transform is applied (for hover mode without data-flipped) */
+.kpi-flip-card[style*="rotateY(180deg)"] .tooltip-icon-trigger,
+.kpi-flip-card[style*="rotateY(180deg)"] .kpi-tooltip-icon-wrapper {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
