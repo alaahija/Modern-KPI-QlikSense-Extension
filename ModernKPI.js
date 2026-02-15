@@ -701,7 +701,9 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
         }
         // CRITICAL: qValueExpression at root level is accessed by Qlik Sense's isLocked() function
         // Must ALWAYS exist as object (not null) to prevent "Cannot read properties of null" errors
-        measure.qValueExpression = { qv: "" };
+        if (!measure.qValueExpression || typeof measure.qValueExpression !== 'object') {
+            measure.qValueExpression = { qv: "" };
+        }
 
         return measure;
     }
@@ -1157,12 +1159,35 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
             if (!Array.isArray(props.qHyperCubeDef.qMeasures)) {
                 props.qHyperCubeDef.qMeasures = [];
             }
+            // ============================================
+            // CRITICAL: Prevent "Cannot read properties of null (reading 'qValueExpression')"
+            // errors during drag-and-drop operations. Qlik's isLocked() function accesses
+            // qValueExpression before beforeUpdate runs, so we must ensure structure exists.
+            // ============================================
+
+            // First, ensure qHyperCubeDef exists
+            if (!props.qHyperCubeDef) {
+                props.qHyperCubeDef = {
+                    qDimensions: [],
+                    qMeasures: [],
+                    qInitialDataFetch: [{ qWidth: 10, qHeight: 1 }],
+                    qSuppressZero: false,
+                    qSuppressMissing: false
+                };
+            }
+
+            // Ensure qMeasures array exists
+            if (!props.qHyperCubeDef.qMeasures) {
+                props.qHyperCubeDef.qMeasures = [];
+            }
+
             // IMMEDIATE CLEANUP of any nulls to prevent isLocked() crashes
             for (var i = 0; i < props.qHyperCubeDef.qMeasures.length; i++) {
                 if (!props.qHyperCubeDef.qMeasures[i]) {
                     props.qHyperCubeDef.qMeasures[i] = ensureMeasureStructure(null);
                 }
             }
+
             // Ensure at least one measure exists (for main KPI measure)
             if (props.qHyperCubeDef.qMeasures.length === 0) {
                 props.qHyperCubeDef.qMeasures.push(ensureMeasureStructure(null));
