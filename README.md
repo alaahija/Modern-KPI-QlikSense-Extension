@@ -26,6 +26,10 @@ Visual context with trend lines and dynamic background colors that react to your
 
 *(Background dynamically turns red/green based on set thresholds)*
 
+### 4. Multiple Comparison Metrics
+Display a comprehensive view with **1 Main KPI** and up to **3 Comparison KPIs** side-by-side. Perfect for showing Year-over-Year growth, targets, and additional context in a single compact card.
+![Multiple Comparisons](docs/images/4%20measure.png)
+
 ---
 
 ## ✨ Key Features
