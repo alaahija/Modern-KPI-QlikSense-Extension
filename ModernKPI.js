@@ -1848,42 +1848,68 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 'position': 'relative'
             });
 
-            // Pre-render: evaluate conditional background expression so the
-            // resolved color is available when building the HTML template.
-            if (layout.props.conditionalBgColor && typeof layout.props.conditionalBgColor === 'string' &&
-                layout.props.conditionalBgColor.trim().charAt(0) === '=') {
-                try {
-                    var app = qlik.currApp(this) || qlik.currApp($element);
-                    var expr = layout.props.conditionalBgColor;
-                    expr = expr.replace(/\/\/.*$/gm, '');
-                    if (app && app.createGenericObject) {
-                        var sessionObj = null;
-                        try {
-                            sessionObj = await app.createGenericObject({
-                                customColor: { qStringExpression: expr }
-                            });
-                            var sessionLayout = await sessionObj.getLayout();
-                            var evaluated = sessionLayout.customColor;
-                            if (evaluated != null && String(evaluated).trim() !== '' &&
-                                String(evaluated) !== 'NaN' && String(evaluated) !== 'undefined') {
-                                var colorStr = String(evaluated).trim();
-                                if (/^\d+$/.test(colorStr)) {
-                                    var argb = parseInt(colorStr, 10);
-                                    var cr = (argb >> 16) & 0xFF, cg = (argb >> 8) & 0xFF, cb = argb & 0xFF;
-                                    colorStr = "#" + ((1 << 24) | (cr << 16) | (cg << 8) | cb).toString(16).slice(1);
+            // Pre-render: evaluate expression-based properties so resolved values
+            // are available when building the HTML template.
+            // Uses the same proven createGenericObject + await pattern.
+            {
+                var _bg  = layout.props.conditionalBgColor || "";
+                var _sub = layout.props.mainSubtitle || "";
+                var _ttl = layout.props.mainTitle || "";
+                var _lt  = layout.props.leftTitle || "";
+                var _rt  = layout.props.rightTitle || "";
+                var _tt  = layout.props.thirdTitle || "";
+                var _needBg  = typeof _bg  === "string" && _bg.trim().charAt(0)  === "=";
+                var _needSub = typeof _sub === "string" && _sub.trim().charAt(0) === "=";
+                var _needTtl = typeof _ttl === "string" && _ttl.trim().charAt(0) === "=";
+                var _needLt  = typeof _lt  === "string" && _lt.trim().charAt(0)  === "=";
+                var _needRt  = typeof _rt  === "string" && _rt.trim().charAt(0)  === "=";
+                var _needTt  = typeof _tt  === "string" && _tt.trim().charAt(0)  === "=";
+
+                if (_needBg || _needSub || _needTtl || _needLt || _needRt || _needTt) {
+                    try {
+                        var _app = qlik.currApp(this) || qlik.currApp($element);
+                        if (_app && _app.createGenericObject) {
+                            var _def = {};
+                            if (_needBg)  _def.bg  = { qStringExpression: _bg.replace(/\/\/.*$/gm, '') };
+                            if (_needSub) _def.sub = { qStringExpression: _sub.replace(/\/\/.*$/gm, '') };
+                            if (_needTtl) _def.ttl = { qStringExpression: _ttl.replace(/\/\/.*$/gm, '') };
+                            if (_needLt)  _def.lt  = { qStringExpression: _lt.replace(/\/\/.*$/gm, '') };
+                            if (_needRt)  _def.rt  = { qStringExpression: _rt.replace(/\/\/.*$/gm, '') };
+                            if (_needTt)  _def.tt  = { qStringExpression: _tt.replace(/\/\/.*$/gm, '') };
+                            var _sObj = null;
+                            try {
+                                _sObj = await _app.createGenericObject(_def);
+                                var _lo = await _sObj.getLayout();
+                                if (_needBg && _lo.bg != null) {
+                                    var bgVal = String(_lo.bg).trim();
+                                    if (bgVal && bgVal !== "NaN" && bgVal !== "undefined") {
+                                        if (/^\d+$/.test(bgVal)) {
+                                            var argb = parseInt(bgVal, 10);
+                                            bgVal = "#" + ((1 << 24) | (((argb >> 16) & 0xFF) << 16) | (((argb >> 8) & 0xFF) << 8) | (argb & 0xFF)).toString(16).slice(1);
+                                        }
+                                        layout.props.conditionalBgColor = bgVal;
+                                    } else { layout.props.conditionalBgColor = null; }
                                 }
-                                layout.props.conditionalBgColor = colorStr;
-                            } else {
-                                layout.props.conditionalBgColor = null;
-                            }
-                        } finally {
-                            if (sessionObj && app.destroySessionObject) {
-                                try { app.destroySessionObject(sessionObj.id); } catch (_) {}
+                                if (_needSub && _lo.sub != null && String(_lo.sub).trim() !== "")
+                                    layout.props.mainSubtitle = String(_lo.sub).trim();
+                                if (_needTtl && _lo.ttl != null && String(_lo.ttl).trim() !== "")
+                                    layout.props.mainTitle = String(_lo.ttl).trim();
+                                if (_needLt && _lo.lt != null && String(_lo.lt).trim() !== "")
+                                    layout.props.leftTitle = String(_lo.lt).trim();
+                                if (_needRt && _lo.rt != null && String(_lo.rt).trim() !== "")
+                                    layout.props.rightTitle = String(_lo.rt).trim();
+                                if (_needTt && _lo.tt != null && String(_lo.tt).trim() !== "")
+                                    layout.props.thirdTitle = String(_lo.tt).trim();
+                            } finally {
+                                if (_sObj && _app.destroySessionObject) {
+                                    try { _app.destroySessionObject(_sObj.id); } catch (_) {}
+                                }
                             }
                         }
+                    } catch (e) {
+                        console.warn("ModernKPI: Expression evaluation failed", e);
+                        if (_needBg) layout.props.conditionalBgColor = null;
                     }
-                } catch (e) {
-                    layout.props.conditionalBgColor = null;
                 }
             }
 
@@ -2919,6 +2945,19 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     const $titleEl = $element.find('.kpi-title');
                     if ($titleEl.length && hasTitle) $titleEl.html(mainTitle);
 
+                    // Patch subtitle
+                    const $subtitleEl = $element.find('.kpi-subtitle');
+                    if (hasSubtitle) {
+                        if ($subtitleEl.length) {
+                            $subtitleEl.html(subtitleText).css({ 'font-size': subtitleFontSize + 'px', 'color': subtitleColor });
+                        } else {
+                            var $tg = $element.find('.kpi-title-group');
+                            if ($tg.length) $tg.append('<span class="kpi-subtitle" style="font-size:' + subtitleFontSize + 'px;color:' + subtitleColor + ';">' + subtitleText + '</span>');
+                        }
+                    } else if ($subtitleEl.length) {
+                        $subtitleEl.remove();
+                    }
+
                     // Patch comparison blocks (full rebuild of each block to update arrows, colors, values)
                     const $compBlocks = $element.find('.comp-block');
                     if ($compBlocks.length && showComparison) {
@@ -3191,84 +3230,9 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     }
                 }
 
-                // ============================================
-                // BATCH EVALUATE ALL EXPRESSIONS (1 engine call)
-                // ============================================
-                var backendApiRef = getBackendApi(this, $element, layout);
-
-                // Collect all expressions that need evaluation
-                var exprBatch = {};
-                if (needsEvaluation && titleExpression && titleExpression.trim() !== "") {
-                    exprBatch._title = titleExpression;
-                }
-                if (subtitleParsed.needsEval && subtitleParsed.expression && subtitleParsed.expression.trim() !== "") {
-                    exprBatch._subtitle = subtitleParsed.expression;
-                }
-                comparisonSides.forEach(function (side) {
-                    if (evaluatedTitles[side] && evaluatedTitles[side].needsEval && evaluatedTitles[side].expr) {
-                        exprBatch["_comp_" + side] = evaluatedTitles[side].expr;
-                    }
-                });
-                // Single batched call for all expressions
-                // (condBg is already evaluated in the pre-render await block)
-                if (Object.keys(exprBatch).length > 0) {
-                    batchEvaluateExpressions(exprBatch, backendApiRef).then(function (results) {
-                        // Apply main title (reuse cached selectors)
-                        if (results._title !== undefined) {
-                            var escaped = escapeHtml(results._title);
-                            if ($c.kpiTitle.length > 0) {
-                                $c.kpiTitle.html(escaped);
-                                var $headerEl = $c.kpiTitle.closest('.kpi-header');
-                                if ($headerEl.length > 0) $headerEl.show();
-                            } else if (results._title && String(results._title).trim() !== "") {
-                                var fs = layout.props.mainTitleFontSize || 14;
-                                var fw = layout.props.mainTitleFontWeight || "500";
-                                var align = layout.props.mainTitleAlignment || "left";
-                                var ha = align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start";
-                                var iPos = layout.props.mainIconPosition || "left";
-                                var iUrl = layout.props.titleIcon;
-                                var iSize = layout.props.mainIconSize || 20;
-                                var iHtml = iUrl ? '<img class="title-icon" src="' + iUrl + '" style="width:' + iSize + 'px;height:' + iSize + 'px;" alt="">' : "";
-                                var titleSpan = '<div class="kpi-title-group"><span class="kpi-title" style="font-size:' + fs + 'px;font-weight:' + fw + ';">' + escaped + '</span></div>';
-                                var hc = iPos === "right" ? titleSpan + iHtml : iHtml + titleSpan;
-                                if ($c.mainValue.length > 0) {
-                                    $c.mainValue.before('<div class="kpi-header ' + (iPos === "top" ? "icon-top" : "") + '" data-align="' + align + '" data-icon-pos="' + iPos + '" style="justify-content:' + ha + ';">' + hc + '</div>');
-                                }
-                            }
-                        }
-
-                        // Apply subtitle
-                        if (results._subtitle !== undefined) {
-                            var subEscaped = escapeHtml(results._subtitle);
-                            var $subEl = $element.find('.kpi-subtitle');
-                            if ($subEl.length > 0) {
-                                $subEl.html(subEscaped);
-                            } else if (results._subtitle && String(results._subtitle).trim() !== "") {
-                                var $titleGroup = $element.find('.kpi-title-group');
-                                if ($titleGroup.length > 0) {
-                                    $titleGroup.append('<span class="kpi-subtitle" style="font-size:' + subtitleFontSize + 'px;color:' + subtitleColor + ';">' + subEscaped + '</span>');
-                                }
-                            }
-                        }
-
-                        // Apply comparison titles (reuse cached $c.compTitles)
-                        var enabledOrder = [];
-                        if (layout.props.enableLeft !== false) enabledOrder.push("left");
-                        if (layout.props.enableRight !== false) enabledOrder.push("right");
-                        if (layout.props.enableThird === true) enabledOrder.push("third");
-                        comparisonSides.forEach(function (side) {
-                            var key = "_comp_" + side;
-                            if (results[key] !== undefined) {
-                                var compEscaped = escapeHtml(results[key]);
-                                var idx = enabledOrder.indexOf(side);
-                                if (idx >= 0 && $c.compTitles.length > idx) {
-                                    $($c.compTitles[idx]).html(compEscaped);
-                                }
-                            }
-                        });
-
-                    }).catch(function () { /* ignore batch errors */ });
-                }
+                // Expression properties (title, subtitle, comparison titles, condBg)
+                // are all resolved in the pre-render await block above, so no
+                // post-render batch evaluation is needed.
 
                 // ============================================
                 // CLICK ACTION / NAVIGATION
