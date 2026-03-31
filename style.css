@@ -288,6 +288,17 @@
     width: 100%;
 }
 
+/* Offset title text so it doesn't overlap the absolutely-positioned icon.
+   Only when left/right aligned — centered titles ignore the icon on purpose.
+   Fallback is 0 so no padding appears when icon is removed. */
+.kpi-header[data-icon-pos="left"][data-align="left"]:not(.icon-top) .kpi-title-group {
+    padding-left: var(--kpi-icon-offset, 0px);
+}
+
+.kpi-header[data-icon-pos="right"][data-align="right"]:not(.icon-top) .kpi-title-group {
+    padding-right: var(--kpi-icon-offset, 0px);
+}
+
 .kpi-header.icon-top .title-icon {
     margin-bottom: 4px;
 }
