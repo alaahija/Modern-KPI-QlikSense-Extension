@@ -2983,37 +2983,37 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 const userMainFontSize = autoFitMainValue ? 200 : (layout.props.mainValueFontSize || 25);
                 const mainTextLen = String(mainFormatted).replace(/<[^>]*>/g, '').trim().length || 1;
 
-                // Constraint 1: Height cap — generous to respect user setting
-                const heightDiv = visibleCompCount > 0 ? (autoFitMainValue ? 4.0 : 5.5) : (autoFitMainValue ? 2.2 : 3.0);
+                // Constraint 1: Height cap
+                const heightDiv = visibleCompCount > 0 ? (autoFitMainValue ? 5.0 : 7.0) : (autoFitMainValue ? 2.5 : 3.5);
                 const heightCap = cardHeight / heightDiv;
 
                 // Constraint 2: Text-width cap — value must fit horizontally
-                const pad = cardWidth <= 160 ? 12 : cardWidth <= 220 ? 16 : 28;
+                const pad = cardWidth <= 160 ? 14 : cardWidth <= 220 ? 20 : 32;
                 const fitWidth = Math.max(40, cardWidth - pad);
-                const textCap = fitWidth / (mainTextLen * 0.56);
+                const textCap = fitWidth / (mainTextLen * 0.58);
 
-                // Constraint 3: Width-proportional cap (relaxed in auto-fit mode)
-                const widthCap = autoFitMainValue ? cardWidth * 0.48 : cardWidth * 0.18;
+                // Constraint 3: Width-proportional cap
+                const widthCap = autoFitMainValue ? cardWidth * 0.42 : cardWidth * 0.15;
 
                 // Pick the tightest constraint, floor at 10px
                 const scaledMainFont = Math.round(Math.max(10, Math.min(userMainFontSize, heightCap, textCap, widthCap)));
 
                 // --- Scale TITLE font size ---
                 const userTitleFont = layout.props.mainTitleFontSize || 14;
-                const scaledTitleFont = Math.round(Math.max(8, Math.min(userTitleFont, cardHeight / 7, cardWidth * 0.12)));
+                const scaledTitleFont = Math.round(Math.max(8, Math.min(userTitleFont, cardHeight / 8, cardWidth * 0.09)));
 
                 // --- Scale COMPARISON VALUE font size ---
                 let compFontSize = layout.props.compValueFontSize || 18;
-                const compHCap = cardHeight / 6.5;
-                const compWCap = cardWidth * 0.12;
+                const compHCap = cardHeight / 7.5;
+                const compWCap = cardWidth * 0.10;
                 compFontSize = Math.round(Math.max(9, Math.min(compFontSize, compHCap, compWCap)));
 
                 // --- Scale COMPARISON TITLE font size ---
                 const userCompTitleFont = layout.props.leftTitleFontSize || 12;
-                const scaledCompTitleFont = Math.round(Math.max(7, Math.min(userCompTitleFont, cardHeight / 9, cardWidth * 0.09)));
+                const scaledCompTitleFont = Math.round(Math.max(7, Math.min(userCompTitleFont, cardHeight / 10, cardWidth * 0.08)));
 
                 // --- Scale ARROW size ---
-                const scaledArrowFont = Math.round(Math.max(8, Math.min(14, cardHeight / 9, cardWidth * 0.09)));
+                const scaledArrowFont = Math.round(Math.max(8, Math.min(14, cardHeight / 10, cardWidth * 0.08)));
 
                 // Width class for CSS fallback
                 const sizeClass = cardWidth <= 120 ? 'kpi-micro' : cardWidth <= 160 ? 'kpi-tiny' : cardWidth <= 220 ? 'kpi-compact' : '';
@@ -3044,7 +3044,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 let subtitleDisplay = subtitleParsed.displayText;
                 const hasSubtitle = subtitleDisplay && String(subtitleDisplay).trim() !== "";
                 const subtitleText = hasSubtitle ? escapeHtml(subtitleDisplay) : "";
-                const subtitleFontSize = Math.round(Math.max(7, Math.min(layout.props.mainSubtitleFontSize || 11, cardHeight / 10, cardWidth * 0.08)));
+                const subtitleFontSize = Math.round(Math.max(7, Math.min(layout.props.mainSubtitleFontSize || 11, cardHeight / 12, cardWidth * 0.065)));
                 const subtitleColor = fixColor(layout.props.mainSubtitleColor, "#888888");
 
                 const scaledIconSize = Math.round(Math.max(14, Math.min(mainIconSize, cardHeight / 6, cardWidth * 0.12)));
