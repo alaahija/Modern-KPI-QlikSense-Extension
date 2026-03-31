@@ -1,6 +1,5 @@
 define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
 
-
     /**
      * @file ModernKPI.js
      * @description A modern, customizable KPI card extension for Qlik Sense.
@@ -20,902 +19,119 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
     }
 
     // ============================================
-    // UTILITY FUNCTIONS
+    // SECTION 1: UTILITY FUNCTIONS
+    // Colors, formatting, escaping, expression parsing, animation
     // ============================================
 
-    /**
-     * Universal color handler - works across all Qlik versions
-     * Supports: string hex, rgb/rgba, color names, Qlik color objects
-     */
-    function fixColor(val, fallback = "#cccccc") {
-        if (val === null || val === undefined) {
-            return fallback;
-        }
-
-        // Handle string colors (hex, rgb, rgba, color names)
-        if (typeof val === "string") {
-            const trimmed = val.trim();
-            if (trimmed !== "") {
-                return trimmed;
-            }
-        }
-
-        // Handle Qlik color objects (dualOutput: true format)
+    function fixColor(val, fallback) {
+        if (fallback === undefined) fallback = "#cccccc";
+        if (val === null || val === undefined) return fallback;
+        if (typeof val === "string") { var trimmed = val.trim(); if (trimmed !== "") return trimmed; }
         if (typeof val === "object") {
-            // Try color property first (most common)
-            if (val.color !== undefined) {
-                if (typeof val.color === "string" && val.color.trim() !== "") {
-                    return val.color.trim();
-                }
-            }
-            // Try hex property
-            if (val.hex !== undefined) {
-                if (typeof val.hex === "string" && val.hex.trim() !== "") {
-                    return val.hex.trim();
-                }
-            }
-            // Try qString property (some Qlik versions)
-            if (val.qString !== undefined) {
-                if (typeof val.qString === "string" && val.qString.trim() !== "") {
-                    return val.qString.trim();
-                }
-            }
-            // Try value property
-            if (val.value !== undefined) {
-                if (typeof val.value === "string" && val.value.trim() !== "") {
-                    return val.value.trim();
-                }
-            }
-
-            // Try JSON stringify/parse for nested objects
-            try {
-                const jsonStr = JSON.stringify(val);
-                if (jsonStr.includes('"color"') || jsonStr.includes('"hex"')) {
-                    const parsed = JSON.parse(jsonStr);
-                    if (parsed.color) return parsed.color.trim();
-                    if (parsed.hex) return parsed.hex.trim();
-                }
-            } catch (e) {
-                // Ignore JSON errors
-            }
+            if (val.color !== undefined && typeof val.color === "string" && val.color.trim() !== "") return val.color.trim();
+            if (val.hex !== undefined && typeof val.hex === "string" && val.hex.trim() !== "") return val.hex.trim();
+            if (val.qString !== undefined && typeof val.qString === "string" && val.qString.trim() !== "") return val.qString.trim();
+            if (val.value !== undefined && typeof val.value === "string" && val.value.trim() !== "") return val.value.trim();
+            try { var jsonStr = JSON.stringify(val); if (jsonStr.indexOf('"color"') >= 0 || jsonStr.indexOf('"hex"') >= 0) { var parsed = JSON.parse(jsonStr); if (parsed.color) return parsed.color.trim(); if (parsed.hex) return parsed.hex.trim(); } } catch (_) {}
         }
-
         return fallback;
     }
 
-    /**
-     * Calculate luminance for auto-contrast
-     * Returns true if background is dark (use light text), false if light (use dark text)
-     */
     function getContrastColor(bgColor) {
         if (!bgColor) return "#222222";
-
-        // Remove # if present
-        const hex = bgColor.replace("#", "");
+        var hex = bgColor.replace("#", "");
         if (hex.length !== 6) return "#222222";
-
-        // Convert to RGB
-        const r = parseInt(hex.substr(0, 2), 16);
-        const g = parseInt(hex.substr(2, 2), 16);
-        const b = parseInt(hex.substr(4, 2), 16);
-
-        // Calculate relative luminance
-        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-        // Return white for dark backgrounds, black for light
-        return luminance < 0.5 ? "#ffffff" : "#222222";
+        var r = parseInt(hex.substr(0, 2), 16), g = parseInt(hex.substr(2, 2), 16), b = parseInt(hex.substr(4, 2), 16);
+        return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5 ? "#ffffff" : "#222222";
     }
 
-    /**
-     * Format a Qlik day-fraction value as a duration / time string.
-     * Qlik stores time as a fraction of a day (e.g., 0.5 = 12 hours).
-     * Supports patterns: h, hh, m, mm, s, ss, and combinations like h:mm:ss, [h]:mm:ss, D hh:mm:ss
-     */
     function formatAsDuration(num, pattern) {
-        const isNeg = num < 0;
-        const absVal = Math.abs(num);
-
-        // Convert day-fraction to total seconds
-        const totalSeconds = Math.round(absVal * 86400); // 24 * 60 * 60
-
-        // Check if pattern uses [h] (total hours, no day overflow) or D (days)
-        const hasBracketH = /\[h+\]/i.test(pattern);
-        const hasDays = /D/i.test(pattern);
-
-        let days = 0, hours = 0, minutes = 0, seconds = 0;
-
-        if (hasBracketH) {
-            // [h] = total hours (can exceed 24)
-            hours = Math.floor(totalSeconds / 3600);
-            minutes = Math.floor((totalSeconds % 3600) / 60);
-            seconds = totalSeconds % 60;
-        } else if (hasDays) {
-            days = Math.floor(totalSeconds / 86400);
-            hours = Math.floor((totalSeconds % 86400) / 3600);
-            minutes = Math.floor((totalSeconds % 3600) / 60);
-            seconds = totalSeconds % 60;
-        } else {
-            // Default: total hours (can exceed 24), like native Qlik h:mm:ss
-            hours = Math.floor(totalSeconds / 3600);
-            minutes = Math.floor((totalSeconds % 3600) / 60);
-            seconds = totalSeconds % 60;
-        }
-
-        // Build output by replacing tokens in the pattern
-        let result = pattern;
-
-        // Replace [h] or [hh] tokens
-        result = result.replace(/\[hh\]/gi, String(hours).padStart(2, '0'));
-        result = result.replace(/\[h\]/gi, String(hours));
-
-        // Replace D/DD tokens
-        result = result.replace(/DD/g, String(days).padStart(2, '0'));
-        result = result.replace(/D/g, String(days));
-
-        // Replace hh/h tokens (only if not already handled by [h])
-        if (!hasBracketH) {
-            result = result.replace(/hh/gi, String(hours).padStart(2, '0'));
-            result = result.replace(/\bh\b/gi, String(hours));
-        }
-
-        // Replace mm/m tokens (minutes)
-        result = result.replace(/mm/g, String(minutes).padStart(2, '0'));
-        result = result.replace(/\bm\b/g, String(minutes));
-
-        // Replace ss/s tokens (seconds)
-        result = result.replace(/ss/g, String(seconds).padStart(2, '0'));
-        result = result.replace(/\bs\b/g, String(seconds));
-
+        var isNeg = num < 0, absVal = Math.abs(num), totalSeconds = Math.round(absVal * 86400);
+        var hasBracketH = /\[h+\]/i.test(pattern), hasDays = /D/i.test(pattern);
+        var days = 0, hours = 0, minutes = 0, seconds = 0;
+        if (hasBracketH) { hours = Math.floor(totalSeconds / 3600); minutes = Math.floor((totalSeconds % 3600) / 60); seconds = totalSeconds % 60; }
+        else if (hasDays) { days = Math.floor(totalSeconds / 86400); hours = Math.floor((totalSeconds % 86400) / 3600); minutes = Math.floor((totalSeconds % 3600) / 60); seconds = totalSeconds % 60; }
+        else { hours = Math.floor(totalSeconds / 3600); minutes = Math.floor((totalSeconds % 3600) / 60); seconds = totalSeconds % 60; }
+        var result = pattern;
+        result = result.replace(/\[hh\]/gi, String(hours).padStart(2, '0')); result = result.replace(/\[h\]/gi, String(hours));
+        result = result.replace(/DD/g, String(days).padStart(2, '0')); result = result.replace(/D/g, String(days));
+        if (!hasBracketH) { result = result.replace(/hh/gi, String(hours).padStart(2, '0')); result = result.replace(/\bh\b/gi, String(hours)); }
+        result = result.replace(/mm/g, String(minutes).padStart(2, '0')); result = result.replace(/\bm\b/g, String(minutes));
+        result = result.replace(/ss/g, String(seconds).padStart(2, '0')); result = result.replace(/\bs\b/g, String(seconds));
         return (isNeg ? "-" : "") + result;
     }
 
-    /**
-     * Check if a format pattern is a time/duration pattern
-     */
-    function isTimePattern(pattern) {
-        if (!pattern) return false;
-        const p = pattern.trim().toLowerCase();
-        // Contains h, m, s tokens typical of time patterns
-        return /\bh\b|hh|\[h|:mm|:ss|:m\b|:s\b/i.test(p) && !/#|0/.test(p);
-    }
+    function isTimePattern(pattern) { if (!pattern) return false; return /\bh\b|hh|\[h|:mm|:ss|:m\b|:s\b/i.test(pattern.trim()) && !/#|0/.test(pattern.trim()); }
 
-    /**
-     * Format number using Qlik format pattern (e.g., #,##0.00, $#,##0.00;-$#,##0.00, h:mm:ss)
-     */
     function formatWithQlikPattern(num, pattern) {
-        if (!pattern || pattern.trim() === "") {
-            return num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-        }
-
-        const cleanPattern = pattern.trim();
-
-        // Detect time/duration patterns and handle them specially
-        if (isTimePattern(cleanPattern)) {
-            return formatAsDuration(num, cleanPattern);
-        }
-
-        // Handle positive/negative patterns (e.g., $#,##0.00;-$#,##0.00)
-        const parts = cleanPattern.split(';');
-        const positivePattern = parts[0] || cleanPattern;
-        const negativePattern = parts[1] || positivePattern;
-        const usePattern = num < 0 ? negativePattern : positivePattern;
-
-        // Extract decimal places from pattern (count of 0 after decimal point)
-        const decimalMatch = usePattern.match(/\.(0+)/);
-        const decimalPlaces = decimalMatch ? decimalMatch[1].length : 0;
-
-        // Check if pattern uses thousands separator (comma in pattern like #,##0)
-        const hasThousands = usePattern.includes(',');
-
-        // Format the absolute number
-        let formatted = Math.abs(num).toFixed(decimalPlaces);
-
-        // Apply thousands separator if pattern has comma
-        if (hasThousands) {
-            const numParts = formatted.split('.');
-            numParts[0] = numParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            formatted = numParts.join('.');
-        }
-
-        // Extract prefix (everything before first # or 0)
-        const prefixMatch = usePattern.match(/^([^#0]*)/);
-        const prefix = prefixMatch ? prefixMatch[1] : '';
-
-        // Extract suffix (everything after the numeric pattern)
-        // Find where the numeric pattern ends (last digit or decimal point)
-        const numericEndMatch = usePattern.match(/([#0.,]+)([^#0.,]*)$/);
-        const suffix = numericEndMatch && numericEndMatch[2] ? numericEndMatch[2] : '';
-
-        // Build result: prefix + formatted number + suffix
+        if (!pattern || pattern.trim() === "") return num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        var cleanPattern = pattern.trim();
+        if (isTimePattern(cleanPattern)) return formatAsDuration(num, cleanPattern);
+        var parts = cleanPattern.split(';'), positivePattern = parts[0] || cleanPattern, negativePattern = parts[1] || positivePattern;
+        var usePattern = num < 0 ? negativePattern : positivePattern;
+        var decimalMatch = usePattern.match(/\.(0+)/), decimalPlaces = decimalMatch ? decimalMatch[1].length : 0;
+        var hasThousands = usePattern.indexOf(',') >= 0, formatted = Math.abs(num).toFixed(decimalPlaces);
+        if (hasThousands) { var numParts = formatted.split('.'); numParts[0] = numParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); formatted = numParts.join('.'); }
+        var prefixMatch = usePattern.match(/^([^#0]*)/), prefix = prefixMatch ? prefixMatch[1] : '';
+        var numericEndMatch = usePattern.match(/([#0.,]+)([^#0.,]*)$/), suffix = numericEndMatch && numericEndMatch[2] ? numericEndMatch[2] : '';
         return prefix + formatted + suffix;
     }
 
-    /**
-     * Format number based on type
-     */
     function formatNumber(val, type, symbol, customMask) {
         if (val === null || val === undefined || isNaN(val)) return "-";
-
-        const num = typeof val === "number" ? val : parseFloat(val);
-        if (isNaN(num)) return "-";
-
+        var num = typeof val === "number" ? val : parseFloat(val); if (isNaN(num)) return "-";
         switch (type) {
-            case "k": return (num / 1000).toFixed(2) + "K";
-            case "m": return (num / 1e6).toFixed(2) + "M";
-            case "b": return (num / 1e9).toFixed(2) + "B";
-            case "km":
-                // Auto-detect K, M, or B based on value
-                if (Math.abs(num) >= 1e9) return (num / 1e9).toFixed(2) + "B";
-                if (Math.abs(num) >= 1e6) return (num / 1e6).toFixed(2) + "M";
-                if (Math.abs(num) >= 1000) return (num / 1000).toFixed(2) + "K";
-                return num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+            case "k": return (num / 1000).toFixed(2) + "K"; case "m": return (num / 1e6).toFixed(2) + "M"; case "b": return (num / 1e9).toFixed(2) + "B";
+            case "km": if (Math.abs(num) >= 1e9) return (num / 1e9).toFixed(2) + "B"; if (Math.abs(num) >= 1e6) return (num / 1e6).toFixed(2) + "M"; if (Math.abs(num) >= 1000) return (num / 1000).toFixed(2) + "K"; return num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
             case "currency": return (symbol || "$") + num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
             case "percent": return (num * 100).toFixed(1) + "%";
-            case "custom":
-                if (customMask && customMask.trim() !== "") {
-                    // Handle Qlik format patterns (e.g., #,##0.00, $#,##0.00;-$#,##0.00)
-                    return formatWithQlikPattern(num, customMask);
-                }
-                return num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+            case "custom": if (customMask && customMask.trim() !== "") return formatWithQlikPattern(num, customMask); return num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
             default: return num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
         }
     }
 
-    /**
-     * Resolve a value color through a priority chain:
-     *   1. Explicit color (expression string, Qlik color object, or hex string)
-     *   2. Auto-contrast against background
-     *   3. Fallback color
-     */
     function getValueColor(colorInput, fallbackColor, autoContrast, bgColor) {
-        // Try to extract a real color from the input (handles strings, objects, etc.)
-        var resolved = fixColor(colorInput, null);
-        if (resolved) return resolved;
-        // Auto-contrast: derive from background luminance
+        var resolved = fixColor(colorInput, null); if (resolved) return resolved;
         if (autoContrast && bgColor) return getContrastColor(bgColor);
-        // Final fallback
         return fixColor(fallbackColor, "#222222");
     }
 
-    /**
-     * Build dynamic arrow HTML
-     * @param {string} arrowExpr - Expression-driven arrow (e.g., "↑", "↓", or custom text)
-     * @param {string} colorExpr - Color expression for arrow
-     * @param {number} fallbackValue - Numeric value to determine arrow direction if no expression
-     * @param {object} layout - Layout object
-     * @param {boolean} showArrows - Whether to show arrows for this KPI
-     * @param {string} posColor - Color for positive/up arrow
-     * @param {string} negColor - Color for negative/down arrow
-     * @param {boolean} invertLogic - If true, invert arrow colors (down = good, up = bad)
-     */
-    function buildArrow(arrowExpr, colorExpr, fallbackValue, layout, showArrows, posColor, negColor, invertLogic) {
-        // Expression-driven arrow (highest priority)
-        if (arrowExpr && arrowExpr.trim() !== "") {
-            const col = colorExpr && colorExpr.trim() !== ""
-                ? colorExpr.trim()
-                : fixColor(layout.props.textColor, "#222222");
-            return `<span class="comp-arrow" style="color:${col}">${arrowExpr.trim()}</span>`;
-        }
+    function escapeHtml(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
-        // Standard KPI arrows (only if enabled for this KPI)
-        if (!showArrows) return "";
-
-        // Determine arrow direction and color based on value
-        if (fallbackValue > 0) {
-            // Positive value: show up arrow
-            // If invertLogic is true, positive is bad (use negColor), otherwise positive is good (use posColor)
-            const arrowColor = invertLogic ? fixColor(negColor, "#e04e4e") : fixColor(posColor, "#21a46f");
-            return `<span class="comp-arrow" style="color:${arrowColor}">↑</span>`;
-        }
-        if (fallbackValue < 0) {
-            // Negative value: show down arrow
-            // If invertLogic is true, negative is good (use posColor), otherwise negative is bad (use negColor)
-            const arrowColor = invertLogic ? fixColor(posColor, "#21a46f") : fixColor(negColor, "#e04e4e");
-            return `<span class="comp-arrow" style="color:${arrowColor}">↓</span>`;
-        }
-
-        return "";
-    }
-
-    /**
-     * Build mini chart SVG with improved line chart and X-axis support
-     */
-    function buildMiniChart(layout, matrix, chartColIndex, dimIndex, xAxisColIndex, containerWidth /* unused, kept for API compat */, secondSeriesColIndex) {
-        if (!matrix || !matrix.length) return "";
-
-        const values = matrix.map(row => row[chartColIndex]?.qNum).filter(v => typeof v === "number" && !isNaN(v));
-        if (!values.length) return "";
-
-        // Second series values (may be empty / null)
-        const hasSecondSeries = layout.props.enableSecondSeries === true && secondSeriesColIndex !== null;
-        const values2 = hasSecondSeries ? matrix.map(row => (row[secondSeriesColIndex] ? row[secondSeriesColIndex].qNum : NaN)).filter(v => typeof v === "number" && !isNaN(v)) : [];
-        const secondSeriesColor = hasSecondSeries ? fixColor(layout.props.secondSeriesColor, "#ff7043") : "#ff7043";
-
-        const max = Math.max(...values, ...(values2.length ? values2 : [0]));
-        if (max === 0) return "";
-
-        // Fix color extraction - handle both string and object formats
-        let chartColor = "#6aa7ff";
-        if (layout.props.chartColor) {
-            chartColor = fixColor(layout.props.chartColor, "#6aa7ff");
-        }
-
-        const count = values.length;
-        const chartType = layout.props.chartType || "bar";
-        const isLine = chartType === "line";
-        const isSparkline = chartType === "sparkline";
-        const lineWidth = Math.max(0.5, Math.min(10, layout.props.chartLineWidth || 2));
-        const showXAxis = layout.props.showXAxis === true && !isSparkline; // Sparkline never shows axis
-        const xAxisFontSize = layout.props.xAxisFontSize || 10;
-        const hasDim = dimIndex !== null;
-        const hasXAxisMeasure = xAxisColIndex !== null && layout.props.xAxisMeasure;
-
-        // Smart auto-height: smaller when both chart + comparison are shown, larger for chart-only
-        const mode = layout.props.bottomSectionMode || "comparison";
-        const isBothMode = mode === "both";
-        const userHeight = layout.props.chartHeight;
-        const svgHeight = (userHeight && userHeight > 0) ? userHeight : (isBothMode ? 50 : 70);
-
-        let svg;
-
-        if (isSparkline) {
-            // ── SPARKLINE ─────────────────────────────────────────────────
-            // Minimal thin line, no axis, no labels, no fill, no dots
-            const chartHeight = 40;
-            const sparkH = (userHeight && userHeight > 0) ? userHeight : (isBothMode ? 24 : 30);
-            const sparkLineW = Math.max(0.5, Math.min(4, lineWidth));
-            const padding = 2; // padding top/bottom so line doesn't clip
-
-            svg = `<svg class="miniChart miniChart-sparkline" viewBox="0 0 100 ${chartHeight}" preserveAspectRatio="none" style="height:${sparkH}px;" xmlns="http://www.w3.org/2000/svg">`;
-
-            const minVal = Math.min(...values);
-            const range = max - minVal || 1;
-            const pts = values.map((v, i) => {
-                const x = count > 1 ? (i / (count - 1)) * 100 : 50;
-                const y = padding + (chartHeight - 2 * padding) - ((v - minVal) / range * (chartHeight - 2 * padding));
-                return { x, y };
-            });
-
-            const sparkPath = pts.map((p, i) => (i === 0 ? "M" : "L") + ` ${p.x} ${p.y}`).join(" ");
-            svg += `<path d="${sparkPath}" stroke="${chartColor}" stroke-width="${sparkLineW}" fill="none" vector-effect="non-scaling-stroke" style="stroke-linecap:round;stroke-linejoin:round;"/>`;
-
-            // End dot (last data point)
-            const lastPt = pts[pts.length - 1];
-            svg += `<circle cx="${lastPt.x}" cy="${lastPt.y}" r="2" fill="${chartColor}" stroke="none" vector-effect="non-scaling-stroke"/>`;
-
-            svg += `</svg>`;
-            return svg; // Sparkline has no X-axis labels
-        } else if (isLine) {
-            // ── LINE CHART ──────────────────────────────────────────────
-            // Stretched viewBox (same as bars) so line fills full card width.
-            // vector-effect="non-scaling-stroke" keeps the line a uniform 2px.
-            // Gradient area fill for depth. No dots (they distort with non-uniform scaling).
-            const chartHeight = 100;
-
-            svg = `<svg class="miniChart" viewBox="0 0 100 ${chartHeight}" preserveAspectRatio="none" style="height:${svgHeight}px;" xmlns="http://www.w3.org/2000/svg">`;
-            svg += `<line class="miniChart-hover-line" x1="0" y1="0" x2="0" y2="${chartHeight}" stroke="#666666" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
-
-            const points = values.map((v, i) => {
-                const x = count > 1 ? (i / (count - 1)) * 100 : 50;
-                const y = chartHeight - (v / max * chartHeight);
-                return { x, y };
-            });
-
-            // Straight linear path
-            const linePath = points.map((p, i) => (i === 0 ? "M" : "L") + ` ${p.x} ${p.y}`).join(" ");
-
-            // Gradient area fill under the line
-            const gradId = "lineGrad_" + Math.random().toString(36).substr(2, 6);
-            svg += `<defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">`;
-            svg += `<stop offset="0%" stop-color="${chartColor}" stop-opacity="0.2"/>`;
-            svg += `<stop offset="100%" stop-color="${chartColor}" stop-opacity="0.02"/>`;
-            svg += `</linearGradient></defs>`;
-
-            const areaPath = linePath + ` L ${points[points.length - 1].x} ${chartHeight} L ${points[0].x} ${chartHeight} Z`;
-            svg += `<path d="${areaPath}" fill="url(#${gradId})" stroke="none"/>`;
-
-            // Main line
-            svg += `<path class="miniChart-line" d="${linePath}" stroke="${chartColor}" stroke-width="${lineWidth}" fill="none" vector-effect="non-scaling-stroke" style="stroke:${chartColor};stroke-linecap:round;stroke-linejoin:round;"/>`;
-
-            // Small filled data points (same color as line, no border — like Qlik native)
-            points.forEach((p) => {
-                svg += `<circle cx="${p.x}" cy="${p.y}" r="1.8" fill="${chartColor}" stroke="none" vector-effect="non-scaling-stroke"/>`;
-            });
-
-            // Second series overlay (line chart)
-            if (hasSecondSeries && values2.length > 1) {
-                const points2 = values2.map((v, i) => {
-                    const x = values2.length > 1 ? (i / (values2.length - 1)) * 100 : 50;
-                    const y = chartHeight - (v / max * chartHeight);
-                    return { x, y };
-                });
-                const linePath2 = points2.map((p, i) => (i === 0 ? "M" : "L") + ` ${p.x} ${p.y}`).join(" ");
-                svg += `<path d="${linePath2}" stroke="${secondSeriesColor}" stroke-width="${lineWidth}" fill="none" vector-effect="non-scaling-stroke" style="stroke-linecap:round;stroke-linejoin:round;opacity:0.85;"/>`;
-                points2.forEach((p) => {
-                    svg += `<circle cx="${p.x}" cy="${p.y}" r="1.8" fill="${secondSeriesColor}" stroke="none" vector-effect="non-scaling-stroke"/>`;
-                });
-            }
-        } else {
-            // ── BAR CHART ───────────────────────────────────────────────
-            // Stretched viewBox is fine for rectangles
-            const chartHeight = 100;
-            svg = `<svg class="miniChart" viewBox="0 0 100 ${chartHeight}" preserveAspectRatio="none" style="height:${svgHeight}px;" xmlns="http://www.w3.org/2000/svg">`;
-            svg += `<line class="miniChart-hover-line" x1="0" y1="0" x2="0" y2="${chartHeight}" stroke="#666666" stroke-width="1.5"/>`;
-
-            const barWidthPct = Math.max(10, Math.min(100, layout.props.chartBarWidth || 60)) / 100;
-            const showSecondBars = hasSecondSeries && values2.length === count;
-            const groupCount = showSecondBars ? 2 : 1;
-            const barWidth = count > 0 ? (100 / count) * barWidthPct / groupCount : 5;
-            const spacing = count > 0 ? (100 / count) * (1 - barWidthPct) : 0;
-
-            values.forEach((v, i) => {
-                const height = (v / max) * chartHeight;
-                const x = i * (100 / count) + spacing / 2;
-                const y = chartHeight - height;
-                svg += `<rect x="${x}" y="${y}" width="${barWidth}" height="${height}" rx="2" fill="${chartColor}" style="fill:${chartColor}"/>`;
-                if (showSecondBars) {
-                    const h2 = (values2[i] / max) * chartHeight;
-                    const x2 = x + barWidth;
-                    const y2 = chartHeight - h2;
-                    svg += `<rect x="${x2}" y="${y2}" width="${barWidth}" height="${h2}" rx="2" fill="${secondSeriesColor}" style="fill:${secondSeriesColor};opacity:0.85;"/>`;
-                }
-            });
-        }
-
-        svg += `</svg>`;
-
-        // Build X-axis labels as HTML (outside SVG to avoid preserveAspectRatio distortion)
-        let xAxisHtml = "";
-        if (showXAxis && (hasDim || hasXAxisMeasure) && matrix.length > 0) {
-            const xAxisExpr = layout.props.xAxisExpression;
-            let labels = [];
-            matrix.forEach((row, i) => {
-                let label = "";
-
-                // Prefer measure over dimension if available
-                if (hasXAxisMeasure && row[xAxisColIndex]) {
-                    label = row[xAxisColIndex]?.qText || "";
-                } else if (hasDim) {
-                    const dimValue = row[dimIndex]?.qText || "";
-                    label = dimValue;
-
-                    // Apply custom expression/pattern if provided
-                    if (xAxisExpr && xAxisExpr.trim() !== "" && !hasXAxisMeasure) {
-                        const expr = xAxisExpr.trim().toLowerCase();
-                        // Handle common patterns - extract part after dash (e.g., "2025-jul" -> "jul")
-                        if (dimValue.includes("-")) {
-                            const parts = dimValue.split("-");
-                            if (parts.length > 1) {
-                                label = parts[parts.length - 1]; // Take last part
-                            }
-                        }
-                        // Handle substring patterns
-                        if (expr.includes("substring") && dimValue.length > 3) {
-                            label = dimValue.substring(dimValue.length - 3);
-                        }
-                    }
-                }
-
-                labels.push(escapeHtml(label));
-            });
-
-            xAxisHtml = '<div class="mini-chart-xaxis" style="font-size:' + xAxisFontSize + 'px;">';
-            labels.forEach(function (lbl) {
-                xAxisHtml += '<span class="mini-chart-xaxis-label">' + lbl + '</span>';
-            });
-            xAxisHtml += '</div>';
-        }
-
-        // Value labels row (HTML, above X-axis)
-        let valueLabelsHtml = "";
-        if (layout.props.showValueLabels === true && !isSparkline) {
-            const vlFontSize = layout.props.valueLabelFontSize || 9;
-            const vlColor = fixColor(layout.props.textColor, "#666666");
-            valueLabelsHtml = '<div class="mini-chart-value-labels" style="font-size:' + vlFontSize + 'px;color:' + vlColor + ';">';
-            values.forEach(function (v) {
-                // Compact number formatting for labels
-                let label;
-                if (Math.abs(v) >= 1e9) label = (v / 1e9).toFixed(1) + "B";
-                else if (Math.abs(v) >= 1e6) label = (v / 1e6).toFixed(1) + "M";
-                else if (Math.abs(v) >= 1e3) label = (v / 1e3).toFixed(1) + "K";
-                else if (Number.isInteger(v)) label = String(v);
-                else label = v.toFixed(1);
-                valueLabelsHtml += '<span class="mini-chart-value-label">' + escapeHtml(label) + '</span>';
-            });
-            valueLabelsHtml += '</div>';
-        }
-
-        return svg + valueLabelsHtml + xAxisHtml;
-    }
-
-    /**
-     * Build comparison block HTML
-     */
-    function buildComparisonBlock(side, value, formatted, layout, compFontSize, autoContrast, bgColor) {
-        const titleRaw = layout.props[`${side}Title`] || "";
-        // Escape HTML to prevent XSS attacks
-        const title = escapeHtml(titleRaw);
-        const titleFontSize = layout.props[`${side}TitleFontSize`] || 12;
-        const titleFontWeight = layout.props[`${side}TitleFontWeight`] || "500";
-        const valueFontWeight = layout.props[`${side}ValueFontWeight`] || "600";
-        const iconUrl = layout.props[`${side}IconUrl`];
-        const iconSize = layout.props[`${side}IconSize`] || 16;
-        const iconPos = layout.props[`${side}IconPosition`] || "before";
-        const valueColorExpr = layout.props[`${side}ValueColorExpr`];
-        const textColor = layout.props.textColor;
-        const valueColor = getValueColor(valueColorExpr, textColor, autoContrast, bgColor);
-
-        // Prefix & Suffix
-        const prefix = layout.props[`${side}ValuePrefix`] || "";
-        const suffix = layout.props[`${side}ValueSuffix`] || "";
-        const prefixHtml = prefix ? `<span class="val-prefix">${escapeHtml(prefix)}</span>` : "";
-        const suffixHtml = suffix ? `<span class="val-suffix">${escapeHtml(suffix)}</span>` : "";
-
-        // Trend micro-text
-        const trendRaw = layout.props[`${side}TrendText`] || "";
-        const trendColor = fixColor(layout.props[`${side}TrendColor`], "#999999");
-        const trendHtml = trendRaw.trim()
-            ? `<div class="comp-trend" style="color:${trendColor};">${escapeHtml(trendRaw)}</div>`
-            : "";
-
-        const iconHtml = iconUrl
-            ? `<img class="comp-icon" src="${iconUrl}" style="width:${iconSize}px;height:${iconSize}px;" alt="">`
-            : "";
-
-        // Get per-KPI arrow settings
-        const showArrows = layout.props[`${side}ShowArrows`] === true; // Only show if explicitly enabled
-        const posColor = layout.props[`${side}PosColor`] || layout.props.posColor || "#21a46f";
-        const negColor = layout.props[`${side}NegColor`] || layout.props.negColor || "#e04e4e";
-        const invertLogic = layout.props[`${side}InvertArrowLogic`] === true; // Default to false
-        const applyArrowColorToValue = layout.props[`${side}ApplyArrowColorToValue`] === true; // Default to false
-
-        // Use value color expression for both arrow and value (unified approach)
-        const arrow = buildArrow(
-            layout.props[`${side}ArrowExpr`],
-            valueColorExpr, // Use value color expression for arrow color too
-            value,
-            layout,
-            showArrows,
-            posColor,
-            negColor,
-            invertLogic
-        );
-
-        // Determine final value color
-        // Auto-color by sign: green for positive, red for negative (independent of arrows)
-        const autoColorBySign = layout.props[`${side}AutoColorBySign`] === true;
-        let finalValueColor = valueColor;
-        if (autoColorBySign && value !== null && value !== undefined) {
-            if (value > 0) {
-                finalValueColor = fixColor(posColor, "#21a46f");
-            } else if (value < 0) {
-                finalValueColor = fixColor(negColor, "#e04e4e");
-            }
-        } else if (applyArrowColorToValue && showArrows && value !== null && value !== undefined) {
-            // Apply arrow color to value based on value sign and invert logic
-            if (value > 0) {
-                finalValueColor = invertLogic ? fixColor(negColor, "#e04e4e") : fixColor(posColor, "#21a46f");
-            } else if (value < 0) {
-                finalValueColor = invertLogic ? fixColor(posColor, "#21a46f") : fixColor(negColor, "#e04e4e");
-            }
-            // If value is 0, keep original color
-        }
-
-        if (iconPos === "top") {
-            return `
-                <div class="comp-block">
-                    <div class="comp-icon-top">${iconHtml}</div>
-                    <div class="comp-title" style="font-size:${titleFontSize}px;font-weight:${titleFontWeight};">${title}</div>
-                    <div class="comp-value" style="font-size:${compFontSize}px;font-weight:${valueFontWeight};color:${finalValueColor}">
-                        ${arrow}${prefixHtml}${formatted}${suffixHtml}
-                    </div>
-                    ${trendHtml}
-                </div>
-            `;
-        }
-
-        return `
-            <div class="comp-block">
-                <div class="comp-title" style="font-size:${titleFontSize}px;font-weight:${titleFontWeight};">${title}</div>
-                <div class="comp-value" style="font-size:${compFontSize}px;font-weight:${valueFontWeight};color:${finalValueColor}">
-                    ${iconPos === "before" ? iconHtml : ""}
-                    ${arrow}${prefixHtml}${formatted}${suffixHtml}
-                    ${iconPos === "after" ? iconHtml : ""}
-                </div>
-                ${trendHtml}
-            </div>
-        `;
-    }
-
-    // ============================================
-    // MEASURE STRUCTURE HELPER
-    // ============================================
-    /**
-     * Ensures a measure has the complete structure that Qlik Sense expects.
-     * - If the measure is null/undefined, returns a fresh default measure object.
-     * - If it exists, fills in any missing sub-properties with defaults.
-     * - Always sets measure.qValueExpression = { qv: "" } (required by Qlik's isLocked()).
-     * @param {Object|null|undefined} measure
-     * @returns {Object} A fully-structured measure object
-     */
-    function ensureMeasureStructure(measure) {
-        var defaultNumFormat = {
-            qType: "U",
-            qUseThou: 0,
-            qFmt: "",
-            qDec: "",
-            qThou: ""
-        };
-        var defaultSortBy = {
-            qSortByNumeric: 1,
-            qSortByAscii: 1,
-            qSortByLoadOrder: 1
-        };
-
-        if (!measure) {
-            return {
-                qDef: {
-                    qDef: "",
-                    qLabel: "",
-                    qNumFormat: defaultNumFormat
-                },
-                qLibraryId: "",
-                qValueExpression: { qv: "" },
-                qSortBy: defaultSortBy
-            };
-        }
-
-        // Ensure qDef exists and has proper structure
-        if (!measure.qDef) {
-            measure.qDef = {
-                qDef: "",
-                qLabel: "",
-                qNumFormat: defaultNumFormat
-            };
-        } else {
-            if (typeof measure.qDef.qDef === 'undefined') {
-                measure.qDef.qDef = "";
-            }
-            if (typeof measure.qDef.qLabel === 'undefined') {
-                measure.qDef.qLabel = "";
-            }
-            // Remove qValueExpression from qDef if it exists (not a standard property)
-            if (measure.qDef.hasOwnProperty('qValueExpression')) {
-                delete measure.qDef.qValueExpression;
-            }
-            // Ensure qNumFormat exists for native formatting
-            if (!measure.qDef.qNumFormat || typeof measure.qDef.qNumFormat !== 'object') {
-                measure.qDef.qNumFormat = defaultNumFormat;
-            }
-        }
-
-        // Ensure qLibraryId exists
-        if (typeof measure.qLibraryId === 'undefined') {
-            measure.qLibraryId = "";
-        }
-        // Ensure qSortBy exists
-        if (!measure.qSortBy) {
-            measure.qSortBy = defaultSortBy;
-        }
-        // Fix qAttributeExpressions/qAttributeDimensions if they exist but aren't arrays
-        if (measure.hasOwnProperty('qAttributeExpressions') && !Array.isArray(measure.qAttributeExpressions)) {
-            measure.qAttributeExpressions = [];
-        }
-        if (measure.hasOwnProperty('qAttributeDimensions') && !Array.isArray(measure.qAttributeDimensions)) {
-            measure.qAttributeDimensions = [];
-        }
-        // CRITICAL: qValueExpression at root level is accessed by Qlik Sense's isLocked() function
-        // Must ALWAYS exist as object (not null) to prevent "Cannot read properties of null" errors
-        if (!measure.qValueExpression || typeof measure.qValueExpression !== 'object') {
-            measure.qValueExpression = { qv: "" };
-        }
-
-        return measure;
-    }
-
-    // ============================================
-    // COUNT-UP ANIMATION
-    // ============================================
-
-    /**
-     * Ease-out cubic — fast start, smooth deceleration.
-     */
-    function easeOutCubic(t) {
-        return 1 - Math.pow(1 - t, 3);
-    }
-
-    /**
-     * Animate a numeric value from a previous value to `endVal`
-     * inside a DOM element, formatting each frame via `formatFn`.
-     *
-     * @param {HTMLElement} el         Target element (textContent will be overwritten)
-     * @param {number}      endVal     Final numeric value
-     * @param {number}      duration   Animation duration in ms (default 600)
-     * @param {function}    formatFn   (num) => string — formats the interpolated number
-     * @param {string}      finalText  Exact text to display on the last frame (ensures fidelity)
-     */
-    function animateCountUp(el, endVal, duration, formatFn, finalText) {
-        if (!el || isNaN(endVal)) return;
-
-        var prevVal = parseFloat(el.getAttribute('data-anim-prev')) || 0;
-
-        // If value hasn't changed, just set final text and skip animation
-        if (prevVal === endVal) {
-            if (finalText) el.textContent = finalText;
-            return;
-        }
-
-        // Store the new target so subsequent paints can detect changes
-        el.setAttribute('data-anim-prev', endVal);
-
-        var startTime = null;
-        var dur = duration || 600;
-        var exact = finalText || formatFn(endVal);
-
-        function step(timestamp) {
-            if (!startTime) startTime = timestamp;
-            var elapsed = timestamp - startTime;
-            var progress = Math.min(elapsed / dur, 1);
-            var easedProgress = easeOutCubic(progress);
-
-            if (progress < 1) {
-                var current = prevVal + (endVal - prevVal) * easedProgress;
-                el.textContent = formatFn(current);
-                requestAnimationFrame(step);
-            } else {
-                // Final frame: use the exact pre-formatted text for fidelity
-                el.textContent = exact;
-            }
-        }
-
-        requestAnimationFrame(step);
-    }
-
-    // ============================================
-    // EXPRESSION & TITLE HELPERS
-    // ============================================
-
-    /**
-     * Escape HTML special characters to prevent XSS
-     */
-    function escapeHtml(str) {
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
-
-    /**
-     * Extract a plain string from a Qlik expression-style value.
-     * Handles: 'text', "text", ='text', ="text"
-     * Returns the unquoted string, or null if not a simple literal.
-     */
     function extractStringLiteral(expr) {
         if (!expr || typeof expr !== "string") return null;
-        var trimmed = expr.trim();
-        var withoutEquals = trimmed.startsWith("=") ? trimmed.substring(1).trim() : trimmed;
-        if ((withoutEquals.startsWith("'") && withoutEquals.endsWith("'")) ||
-            (withoutEquals.startsWith('"') && withoutEquals.endsWith('"'))) {
-            return withoutEquals.substring(1, withoutEquals.length - 1);
-        }
+        var trimmed = expr.trim(), withoutEquals = trimmed.charAt(0) === "=" ? trimmed.substring(1).trim() : trimmed;
+        if ((withoutEquals.charAt(0) === "'" && withoutEquals.charAt(withoutEquals.length - 1) === "'") || (withoutEquals.charAt(0) === '"' && withoutEquals.charAt(withoutEquals.length - 1) === '"')) return withoutEquals.substring(1, withoutEquals.length - 1);
         return null;
     }
 
-    /** Regex matching common Qlik expression function calls */
     var QLIK_EXPR_RE = /Date\(|AddMonths\(|Today\(|Sum\(|Count\(|Avg\(|Max\(|Min\(|If\(|Match\(|SubString\(/i;
 
-    /**
-     * Parse a raw title value and determine whether it needs server-side evaluation.
-     * @returns {{ displayText: string, expression: string|null, needsEval: boolean }}
-     */
     function parseTitleExpression(titleRaw) {
         var result = { displayText: titleRaw || "", expression: null, needsEval: false };
         if (typeof titleRaw !== "string" || titleRaw.trim() === "") return result;
-
         var trimmed = titleRaw.trim();
-
-        // Simple quoted literal — use directly
-        var literal = extractStringLiteral(trimmed);
-        if (literal !== null) {
-            result.displayText = literal;
-            return result;
-        }
-
-        // Starts with = — explicit expression
-        if (trimmed.startsWith("=")) {
-            var inner = trimmed.substring(1).trim();
-            var nestedLiteral = extractStringLiteral(inner);
-            if (nestedLiteral !== null) {
-                result.displayText = nestedLiteral;
-                return result;
-            }
-            result.displayText = ""; // placeholder until evaluated
-            result.expression = inner;
-            result.needsEval = true;
-            return result;
-        }
-
-        // Contains Qlik function calls
-        if (QLIK_EXPR_RE.test(trimmed)) {
-            result.displayText = "";
-            result.expression = trimmed;
-            result.needsEval = true;
-            return result;
-        }
-
-        // Contains operators and is not trivially short
-        if (/[&|]/.test(trimmed) && trimmed.length > 3) {
-            result.displayText = "";
-            result.expression = trimmed;
-            result.needsEval = true;
-            return result;
-        }
-
-        // Plain text — use as-is
+        var literal = extractStringLiteral(trimmed); if (literal !== null) { result.displayText = literal; return result; }
+        if (trimmed.charAt(0) === "=") { var inner = trimmed.substring(1).trim(); var nestedLiteral = extractStringLiteral(inner); if (nestedLiteral !== null) { result.displayText = nestedLiteral; return result; } result.displayText = ""; result.expression = inner; result.needsEval = true; return result; }
+        if (QLIK_EXPR_RE.test(trimmed)) { result.displayText = ""; result.expression = trimmed; result.needsEval = true; return result; }
+        if (/[&|]/.test(trimmed) && trimmed.length > 3) { result.displayText = ""; result.expression = trimmed; result.needsEval = true; return result; }
         return result;
     }
 
-    /**
-     * Try every available Qlik API path to evaluate an expression.
-     * Returns a thenable (promise) or null if no API is available.
-     */
-    function resolveExpression(expr, backendApiRef, $element, layout) {
-        var promise = null;
-
-        // 1) backendApi (most reliable)
-        if (backendApiRef) {
-            if (typeof backendApiRef.evaluateExpression === "function") {
-                promise = backendApiRef.evaluateExpression(expr);
-            } else if (backendApiRef.model && typeof backendApiRef.model.evaluateExpression === "function") {
-                promise = backendApiRef.model.evaluateExpression(expr);
-            } else if (backendApiRef.model && backendApiRef.model.qHyperCube &&
-                backendApiRef.model.qHyperCube.qApp &&
-                typeof backendApiRef.model.qHyperCube.qApp.evaluateExpression === "function") {
-                promise = backendApiRef.model.qHyperCube.qApp.evaluateExpression(expr);
-            }
-        }
-
-        // 2) qlik.currApp()
-        if (!promise && typeof qlik !== "undefined") {
-            try {
-                var app = null;
-                try { app = qlik.currApp(); } catch (_) { /* ignore */ }
-
-                if (app) {
-                    if (typeof app.evaluateExpression === "function") {
-                        promise = app.evaluateExpression(expr);
-                    } else if (typeof app.evaluate === "function") {
-                        promise = app.evaluate(expr);
-                    } else if (app.model && typeof app.model.evaluateExpression === "function") {
-                        promise = app.model.evaluateExpression(expr);
-                    }
-                }
-
-                // 3) qlik.getObject()
-                if (!promise && layout.qInfo && layout.qInfo.qId && typeof qlik.getObject === "function") {
-                    try {
-                        var obj = qlik.getObject(layout.qInfo.qId);
-                        if (obj && obj.model && typeof obj.model.evaluateExpression === "function") {
-                            promise = obj.model.evaluateExpression(expr);
-                        }
-                    } catch (_) { /* ignore */ }
-                }
-
-                // 4) qlik.evaluateExpression (last resort)
-                if (!promise && typeof qlik.evaluateExpression === "function") {
-                    promise = qlik.evaluateExpression(expr);
-                }
-            } catch (_) { /* ignore */ }
-        }
-
-        return promise;
+    function ensureMeasureStructure(measure) {
+        var defaultNumFormat = { qType: "U", qUseThou: 0, qFmt: "", qDec: "", qThou: "" };
+        var defaultSortBy = { qSortByNumeric: 1, qSortByAscii: 1, qSortByLoadOrder: 1 };
+        if (!measure) return { qDef: { qDef: "", qLabel: "", qNumFormat: defaultNumFormat }, qLibraryId: "", qValueExpression: { qv: "" }, qSortBy: defaultSortBy };
+        if (!measure.qDef) { measure.qDef = { qDef: "", qLabel: "", qNumFormat: defaultNumFormat }; }
+        else { if (typeof measure.qDef.qDef === 'undefined') measure.qDef.qDef = ""; if (typeof measure.qDef.qLabel === 'undefined') measure.qDef.qLabel = ""; if (measure.qDef.hasOwnProperty('qValueExpression')) delete measure.qDef.qValueExpression; if (!measure.qDef.qNumFormat || typeof measure.qDef.qNumFormat !== 'object') measure.qDef.qNumFormat = defaultNumFormat; }
+        if (typeof measure.qLibraryId === 'undefined') measure.qLibraryId = "";
+        if (!measure.qSortBy) measure.qSortBy = defaultSortBy;
+        if (measure.hasOwnProperty('qAttributeExpressions') && !Array.isArray(measure.qAttributeExpressions)) measure.qAttributeExpressions = [];
+        if (measure.hasOwnProperty('qAttributeDimensions') && !Array.isArray(measure.qAttributeDimensions)) measure.qAttributeDimensions = [];
+        if (!measure.qValueExpression || typeof measure.qValueExpression !== 'object') measure.qValueExpression = { qv: "" };
+        return measure;
     }
 
-    /**
-     * Normalise the result of evaluateExpression into a plain string.
-     */
     function extractEvalResult(result, fallback) {
         if (!result) return fallback;
         if (result.qText !== undefined && result.qText !== null) return result.qText;
@@ -924,6 +140,146 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
         if (typeof result === "number") return String(result);
         return String(result);
     }
+
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function animateCountUp(el, endVal, duration, formatFn, finalText) {
+        if (!el || isNaN(endVal)) return;
+        var prevVal = parseFloat(el.getAttribute('data-anim-prev')) || 0;
+        if (prevVal === endVal) { if (finalText) el.textContent = finalText; return; }
+        el.setAttribute('data-anim-prev', endVal);
+        var startTime = null, dur = duration || 600, exact = finalText || formatFn(endVal);
+        function step(timestamp) { if (!startTime) startTime = timestamp; var elapsed = timestamp - startTime, progress = Math.min(elapsed / dur, 1), easedProgress = easeOutCubic(progress); if (progress < 1) { el.textContent = formatFn(prevVal + (endVal - prevVal) * easedProgress); requestAnimationFrame(step); } else { el.textContent = exact; } }
+        requestAnimationFrame(step);
+    }
+
+    // ============================================
+    // SECTION 2: HTML BUILDERS
+    // Arrow, mini chart SVG, comparison block
+    // ============================================
+
+    function buildArrow(arrowExpr, colorExpr, fallbackValue, layout, showArrows, posColor, negColor, invertLogic) {
+        if (arrowExpr && arrowExpr.trim() !== "") { var col = colorExpr && colorExpr.trim() !== "" ? colorExpr.trim() : fixColor(layout.props.textColor, "#222222"); return '<span class="comp-arrow" style="color:' + col + '">' + arrowExpr.trim() + '</span>'; }
+        if (!showArrows) return "";
+        if (fallbackValue > 0) return '<span class="comp-arrow" style="color:' + (invertLogic ? fixColor(negColor, "#e04e4e") : fixColor(posColor, "#21a46f")) + '">↑</span>';
+        if (fallbackValue < 0) return '<span class="comp-arrow" style="color:' + (invertLogic ? fixColor(posColor, "#21a46f") : fixColor(negColor, "#e04e4e")) + '">↓</span>';
+        return "";
+    }
+
+    function buildMiniChart(layout, matrix, chartColIndex, dimIndex, xAxisColIndex, containerWidth, secondSeriesColIndex) {
+        if (!matrix || !matrix.length) return "";
+        var values = matrix.map(function (row) { return row[chartColIndex] ? row[chartColIndex].qNum : NaN; }).filter(function (v) { return typeof v === "number" && !isNaN(v); });
+        if (!values.length) return "";
+        var hasSecondSeries = layout.props.enableSecondSeries === true && secondSeriesColIndex !== null;
+        var values2 = hasSecondSeries ? matrix.map(function (row) { return row[secondSeriesColIndex] ? row[secondSeriesColIndex].qNum : NaN; }).filter(function (v) { return typeof v === "number" && !isNaN(v); }) : [];
+        var secondSeriesColor = hasSecondSeries ? fixColor(layout.props.secondSeriesColor, "#ff7043") : "#ff7043";
+        var max = Math.max.apply(null, values.concat(values2.length ? values2 : [0]));
+        if (max === 0) return "";
+        var chartColor = layout.props.chartColor ? fixColor(layout.props.chartColor, "#6aa7ff") : "#6aa7ff";
+        var count = values.length, chartType = layout.props.chartType || "bar", isLine = chartType === "line", isSparkline = chartType === "sparkline";
+        var lineWidth = Math.max(0.5, Math.min(10, layout.props.chartLineWidth || 2));
+        var showXAxis = layout.props.showXAxis === true && !isSparkline, xAxisFontSize = layout.props.xAxisFontSize || 10;
+        var hasDim = dimIndex !== null, hasXAxisMeasure = xAxisColIndex !== null && layout.props.xAxisMeasure;
+        var mode = layout.props.bottomSectionMode || "comparison", isBothMode = mode === "both";
+        var userHeight = layout.props.chartHeight, svgHeight = (userHeight && userHeight > 0) ? userHeight : (isBothMode ? 50 : 70);
+        var svg, i, x, y;
+        if (isSparkline) {
+            var sparkChartH = 40, sparkH = (userHeight && userHeight > 0) ? userHeight : (isBothMode ? 24 : 30);
+            var sparkLineW = Math.max(0.5, Math.min(4, lineWidth)), padding = 2;
+            svg = '<svg class="miniChart miniChart-sparkline" viewBox="0 0 100 ' + sparkChartH + '" preserveAspectRatio="none" style="height:' + sparkH + 'px;" xmlns="http://www.w3.org/2000/svg">';
+            var minVal = Math.min.apply(null, values), range = max - minVal || 1, pts = [];
+            for (i = 0; i < count; i++) { x = count > 1 ? (i / (count - 1)) * 100 : 50; y = padding + (sparkChartH - 2 * padding) - ((values[i] - minVal) / range * (sparkChartH - 2 * padding)); pts.push({ x: x, y: y }); }
+            var sparkPath = pts.map(function (p, idx) { return (idx === 0 ? "M" : "L") + " " + p.x + " " + p.y; }).join(" ");
+            svg += '<path d="' + sparkPath + '" stroke="' + chartColor + '" stroke-width="' + sparkLineW + '" fill="none" vector-effect="non-scaling-stroke" style="stroke-linecap:round;stroke-linejoin:round;"/>';
+            var lastPt = pts[pts.length - 1];
+            svg += '<circle cx="' + lastPt.x + '" cy="' + lastPt.y + '" r="2" fill="' + chartColor + '" stroke="none" vector-effect="non-scaling-stroke"/>';
+            svg += '</svg>'; return svg;
+        } else if (isLine) {
+            var lineChartH = 100;
+            svg = '<svg class="miniChart" viewBox="0 0 100 ' + lineChartH + '" preserveAspectRatio="none" style="height:' + svgHeight + 'px;" xmlns="http://www.w3.org/2000/svg">';
+            svg += '<line class="miniChart-hover-line" x1="0" y1="0" x2="0" y2="' + lineChartH + '" stroke="#666666" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+            var points = [];
+            for (i = 0; i < count; i++) { x = count > 1 ? (i / (count - 1)) * 100 : 50; y = lineChartH - (values[i] / max * lineChartH); points.push({ x: x, y: y }); }
+            var linePath = points.map(function (p, idx) { return (idx === 0 ? "M" : "L") + " " + p.x + " " + p.y; }).join(" ");
+            var gradId = "lineGrad_" + Math.random().toString(36).substr(2, 6);
+            svg += '<defs><linearGradient id="' + gradId + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + chartColor + '" stop-opacity="0.2"/><stop offset="100%" stop-color="' + chartColor + '" stop-opacity="0.02"/></linearGradient></defs>';
+            var areaPath = linePath + ' L ' + points[points.length - 1].x + ' ' + lineChartH + ' L ' + points[0].x + ' ' + lineChartH + ' Z';
+            svg += '<path d="' + areaPath + '" fill="url(#' + gradId + ')" stroke="none"/>';
+            svg += '<path class="miniChart-line" d="' + linePath + '" stroke="' + chartColor + '" stroke-width="' + lineWidth + '" fill="none" vector-effect="non-scaling-stroke" style="stroke:' + chartColor + ';stroke-linecap:round;stroke-linejoin:round;"/>';
+            for (i = 0; i < points.length; i++) { svg += '<circle cx="' + points[i].x + '" cy="' + points[i].y + '" r="1.8" fill="' + chartColor + '" stroke="none" vector-effect="non-scaling-stroke"/>'; }
+            if (hasSecondSeries && values2.length > 1) {
+                var points2 = [];
+                for (i = 0; i < values2.length; i++) { x = values2.length > 1 ? (i / (values2.length - 1)) * 100 : 50; y = lineChartH - (values2[i] / max * lineChartH); points2.push({ x: x, y: y }); }
+                var linePath2 = points2.map(function (p, idx) { return (idx === 0 ? "M" : "L") + " " + p.x + " " + p.y; }).join(" ");
+                svg += '<path d="' + linePath2 + '" stroke="' + secondSeriesColor + '" stroke-width="' + lineWidth + '" fill="none" vector-effect="non-scaling-stroke" style="stroke-linecap:round;stroke-linejoin:round;opacity:0.85;"/>';
+                for (i = 0; i < points2.length; i++) { svg += '<circle cx="' + points2[i].x + '" cy="' + points2[i].y + '" r="1.8" fill="' + secondSeriesColor + '" stroke="none" vector-effect="non-scaling-stroke"/>'; }
+            }
+        } else {
+            var barChartH = 100;
+            svg = '<svg class="miniChart" viewBox="0 0 100 ' + barChartH + '" preserveAspectRatio="none" style="height:' + svgHeight + 'px;" xmlns="http://www.w3.org/2000/svg">';
+            svg += '<line class="miniChart-hover-line" x1="0" y1="0" x2="0" y2="' + barChartH + '" stroke="#666666" stroke-width="1.5"/>';
+            var barWidthPct = Math.max(10, Math.min(100, layout.props.chartBarWidth || 60)) / 100;
+            var showSecondBars = hasSecondSeries && values2.length === count, groupCount = showSecondBars ? 2 : 1;
+            var barWidth = count > 0 ? (100 / count) * barWidthPct / groupCount : 5, spacing = count > 0 ? (100 / count) * (1 - barWidthPct) : 0;
+            for (i = 0; i < count; i++) {
+                var height = (values[i] / max) * barChartH; x = i * (100 / count) + spacing / 2; y = barChartH - height;
+                svg += '<rect x="' + x + '" y="' + y + '" width="' + barWidth + '" height="' + height + '" rx="2" fill="' + chartColor + '" style="fill:' + chartColor + '"/>';
+                if (showSecondBars) { var h2 = (values2[i] / max) * barChartH, x2 = x + barWidth, y2 = barChartH - h2; svg += '<rect x="' + x2 + '" y="' + y2 + '" width="' + barWidth + '" height="' + h2 + '" rx="2" fill="' + secondSeriesColor + '" style="fill:' + secondSeriesColor + ';opacity:0.85;"/>'; }
+            }
+        }
+        svg += '</svg>';
+        var xAxisHtml = "";
+        if (showXAxis && (hasDim || hasXAxisMeasure) && matrix.length > 0) {
+            var xAxisExpr = layout.props.xAxisExpression, labels = [];
+            matrix.forEach(function (row) {
+                var label = "";
+                if (hasXAxisMeasure && row[xAxisColIndex]) { label = row[xAxisColIndex].qText || ""; }
+                else if (hasDim) { var dimValue = row[dimIndex] ? (row[dimIndex].qText || "") : ""; label = dimValue; if (xAxisExpr && xAxisExpr.trim() !== "" && !hasXAxisMeasure) { if (dimValue.indexOf("-") >= 0) { var parts = dimValue.split("-"); if (parts.length > 1) label = parts[parts.length - 1]; } if (xAxisExpr.trim().toLowerCase().indexOf("substring") >= 0 && dimValue.length > 3) { label = dimValue.substring(dimValue.length - 3); } } }
+                labels.push(escapeHtml(label));
+            });
+            xAxisHtml = '<div class="mini-chart-xaxis" style="font-size:' + xAxisFontSize + 'px;">'; labels.forEach(function (lbl) { xAxisHtml += '<span class="mini-chart-xaxis-label">' + lbl + '</span>'; }); xAxisHtml += '</div>';
+        }
+        var valueLabelsHtml = "";
+        if (layout.props.showValueLabels === true && !isSparkline) {
+            var vlFontSize = layout.props.valueLabelFontSize || 9, vlColor = fixColor(layout.props.textColor, "#666666");
+            valueLabelsHtml = '<div class="mini-chart-value-labels" style="font-size:' + vlFontSize + 'px;color:' + vlColor + ';">';
+            values.forEach(function (val) { var lbl; if (Math.abs(val) >= 1e9) lbl = (val / 1e9).toFixed(1) + "B"; else if (Math.abs(val) >= 1e6) lbl = (val / 1e6).toFixed(1) + "M"; else if (Math.abs(val) >= 1e3) lbl = (val / 1e3).toFixed(1) + "K"; else if (val === Math.floor(val)) lbl = String(val); else lbl = val.toFixed(1); valueLabelsHtml += '<span class="mini-chart-value-label">' + escapeHtml(lbl) + '</span>'; });
+            valueLabelsHtml += '</div>';
+        }
+        return svg + valueLabelsHtml + xAxisHtml;
+    }
+
+    function buildComparisonBlock(side, value, formatted, layout, compFontSize, autoContrast, bgColor) {
+        var titleRaw = layout.props[side + "Title"] || "", title = escapeHtml(titleRaw);
+        var titleFontSize = layout.props[side + "TitleFontSize"] || 12, titleFontWeight = layout.props[side + "TitleFontWeight"] || "500";
+        var valueFontWeight = layout.props[side + "ValueFontWeight"] || "600";
+        var iconUrl = layout.props[side + "IconUrl"], iconSize = layout.props[side + "IconSize"] || 16, iconPos = layout.props[side + "IconPosition"] || "before";
+        var valueColorExpr = layout.props[side + "ValueColorExpr"], textColor = layout.props.textColor;
+        var valueColor = getValueColor(valueColorExpr, textColor, autoContrast, bgColor);
+        var prefix = layout.props[side + "ValuePrefix"] || "", suffix = layout.props[side + "ValueSuffix"] || "";
+        var prefixHtml = prefix ? '<span class="val-prefix">' + escapeHtml(prefix) + '</span>' : "";
+        var suffixHtml = suffix ? '<span class="val-suffix">' + escapeHtml(suffix) + '</span>' : "";
+        var trendRaw = layout.props[side + "TrendText"] || "", trendColor = fixColor(layout.props[side + "TrendColor"], "#999999");
+        var trendHtml = trendRaw.trim() ? '<div class="comp-trend" style="color:' + trendColor + ';">' + escapeHtml(trendRaw) + '</div>' : "";
+        var iconHtml = iconUrl ? '<img class="comp-icon" src="' + iconUrl + '" style="width:' + iconSize + 'px;height:' + iconSize + 'px;" alt="">' : "";
+        var showArrows = layout.props[side + "ShowArrows"] === true;
+        var posColor = layout.props[side + "PosColor"] || layout.props.posColor || "#21a46f";
+        var negColor = layout.props[side + "NegColor"] || layout.props.negColor || "#e04e4e";
+        var invertLogic = layout.props[side + "InvertArrowLogic"] === true;
+        var applyArrowColorToValue = layout.props[side + "ApplyArrowColorToValue"] === true;
+        var arrow = buildArrow(layout.props[side + "ArrowExpr"], valueColorExpr, value, layout, showArrows, posColor, negColor, invertLogic);
+        var autoColorBySign = layout.props[side + "AutoColorBySign"] === true, finalValueColor = valueColor;
+        if (autoColorBySign && value !== null && value !== undefined) { if (value > 0) finalValueColor = fixColor(posColor, "#21a46f"); else if (value < 0) finalValueColor = fixColor(negColor, "#e04e4e"); }
+        else if (applyArrowColorToValue && showArrows && value !== null && value !== undefined) { if (value > 0) finalValueColor = invertLogic ? fixColor(negColor, "#e04e4e") : fixColor(posColor, "#21a46f"); else if (value < 0) finalValueColor = invertLogic ? fixColor(posColor, "#21a46f") : fixColor(negColor, "#e04e4e"); }
+        if (iconPos === "top") {
+            return '<div class="comp-block"><div class="comp-icon-top">' + iconHtml + '</div><div class="comp-title" style="font-size:' + titleFontSize + 'px;font-weight:' + titleFontWeight + ';">' + title + '</div><div class="comp-value" style="font-size:' + compFontSize + 'px;font-weight:' + valueFontWeight + ';color:' + finalValueColor + '">' + arrow + prefixHtml + formatted + suffixHtml + '</div>' + trendHtml + '</div>';
+        }
+        return '<div class="comp-block"><div class="comp-title" style="font-size:' + titleFontSize + 'px;font-weight:' + titleFontWeight + ';">' + title + '</div><div class="comp-value" style="font-size:' + compFontSize + 'px;font-weight:' + valueFontWeight + ';color:' + finalValueColor + '">' + (iconPos === "before" ? iconHtml : "") + arrow + prefixHtml + formatted + suffixHtml + (iconPos === "after" ? iconHtml : "") + '</div>' + trendHtml + '</div>';
+    }
+
+    // ============================================
+    // SECTION 3: QLIK-DEPENDENT HELPERS
+    // ============================================
 
     /**
      * Obtain a reference to the backendApi, caching it on `self` and `$element`.
@@ -947,6 +303,69 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
         return ref;
     }
 
+    /**
+     * Batch-evaluate multiple expressions in a single Qlik engine call.
+     * @param {Object} exprMap - { key: "expression string", ... }
+     * @param {Object} backendApiRef - backendApi reference
+     * @returns {Promise<Object>} - { key: "evaluated result string", ... }
+     *
+     * Uses createGenericObject (1 engine call) when available,
+     * falls back to parallel evaluateExpression calls otherwise.
+     */
+    function batchEvaluateExpressions(exprMap, backendApiRef) {
+        var keys = Object.keys(exprMap);
+        if (keys.length === 0) return $.Deferred().resolve({}).promise();
+
+        // Try createGenericObject (1 call for all expressions)
+        var app = null;
+        try { app = qlik.currApp(); } catch (_) {}
+
+        if (app && typeof app.createGenericObject === "function") {
+            var objDef = {};
+            keys.forEach(function (k) {
+                objDef[k] = { qStringExpression: exprMap[k] };
+            });
+            return app.createGenericObject(objDef).then(function (sessionObj) {
+                return sessionObj.getLayout().then(function (lo) {
+                    var results = {};
+                    keys.forEach(function (k) {
+                        results[k] = lo[k] != null ? String(lo[k]) : "";
+                    });
+                    if (app.destroySessionObject) {
+                        try { app.destroySessionObject(sessionObj.id); } catch (_) {}
+                    }
+                    return results;
+                });
+            });
+        }
+
+        // Fallback: parallel individual evaluateExpression calls
+        var promises = {};
+        keys.forEach(function (k) {
+            var p = null;
+            if (backendApiRef && typeof backendApiRef.evaluateExpression === "function") {
+                p = backendApiRef.evaluateExpression(exprMap[k]);
+            } else if (app && typeof app.evaluateExpression === "function") {
+                p = app.evaluateExpression(exprMap[k]);
+            }
+            promises[k] = p || $.Deferred().resolve(null).promise();
+        });
+
+        var deferred = $.Deferred();
+        var promiseArr = keys.map(function (k) { return promises[k]; });
+        $.when.apply($, promiseArr).then(function () {
+            var args = arguments;
+            var results = {};
+            keys.forEach(function (k, i) {
+                results[k] = extractEvalResult(args[i], "");
+            });
+            deferred.resolve(results);
+        }, function () {
+            deferred.resolve({});
+        });
+        return deferred.promise();
+    }
+
     // ============================================
     // EXTENSION DEFINITION
     // ============================================
@@ -960,18 +379,15 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
         // Store backendApi reference for expression evaluation
         backendApi: null,
 
-        // Controller to auto-repair corrupted measures on load
-        controller: ["$scope", function ($scope) {
-            // Check for broken measures (null entries or missing structure) and fix them
+        controller: ["$scope", "$element", function ($scope, $element) {
+            // Auto-repair corrupted measures on load
             if ($scope.backendApi && $scope.backendApi.getProperties) {
                 $scope.backendApi.getProperties().then(function (props) {
                     var changed = false;
                     if (props.qHyperCubeDef && props.qHyperCubeDef.qMeasures) {
                         var measures = props.qHyperCubeDef.qMeasures;
                         for (var i = 0; i < measures.length; i++) {
-                            // If measure is null or missing critical structure
                             if (!measures[i] || !measures[i].qDef || !measures[i].qValueExpression) {
-                                // Repair it using our safe structure generator
                                 measures[i] = ensureMeasureStructure(measures[i] || null);
                                 changed = true;
                             }
@@ -983,6 +399,24 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     }
                 });
             }
+
+            // Cleanup when the extension is destroyed (sheet navigation, object deletion)
+            $scope.$on("$destroy", function () {
+                // Remove orphaned tooltip appended to <body>
+                var $tip = $element.data("kpiChartTooltip");
+                if ($tip) {
+                    $tip.remove();
+                    $element.removeData("kpiChartTooltip");
+                }
+                // Unbind all namespaced events to prevent memory leaks
+                $element.find(".miniChart").off(".kpiChart");
+                $element.find(".tooltip-icon-trigger").off(".kpiFlip");
+                $element.find(".kpi-flip-card-wrapper").off(".kpiFlip");
+                $element.find(".flip-card-back").off(".kpiFlip");
+                $element.find(".kpi-container").off(".kpiNav");
+                // Clear stored data
+                $element.removeData("kpiStructKey");
+            });
         }],
 
         initialProperties: {
@@ -1099,6 +533,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 shadowSpread: 0,
                 // Border defaults
                 borderRadius: 5,
+                // Layout density
+                denseMode: false,
                 // Animation defaults
                 enableCountUp: true,
                 countUpDuration: "600",
@@ -2022,6 +1458,19 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                                     defaultValue: 5
                                 }
                             }
+                        },
+                        layoutDensity: {
+                            label: "Layout Density",
+                            type: "items",
+                            items: {
+                                denseMode: {
+                                    ref: "props.denseMode",
+                                    label: "Dense / Compact Mode",
+                                    type: "boolean",
+                                    defaultValue: false,
+                                    help: "Strips non-essential whitespace, reduces gaps and padding for grid-heavy dashboards."
+                                }
+                            }
                         }
                     }
                 },
@@ -2398,44 +1847,6 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 'display': 'block',
                 'position': 'relative'
             });
-
-            // Evaluate conditional background expression if present
-            // This prevents raw expression strings from breaking the HTML/CSS
-            if (layout.props.conditionalBgColor && typeof layout.props.conditionalBgColor === 'string' && layout.props.conditionalBgColor.trim().charAt(0) === '=') {
-                try {
-                    const app = qlik.currApp(this) || qlik.currApp($element);
-                    let expr = layout.props.conditionalBgColor;
-
-                    // Sanitize: Remove // comments which cause syntax errors in Qlik expressions
-                    expr = expr.replace(/\/\/.*$/gm, '');
-
-                    // Evaluate using a temporary generic object (Standard Qlik API)
-                    // app.evaluate() is not reliably available in all versions
-                    if (app && app.createGenericObject) {
-                        let sessionObj = null;
-                        try {
-                            sessionObj = await app.createGenericObject({
-                                customColor: {
-                                    qStringExpression: expr
-                                }
-                            });
-                            const sessionLayout = await sessionObj.getLayout();
-                            layout.props.conditionalBgColor = sessionLayout.customColor;
-                        } catch (err) {
-                            console.error("ModernKPI: Error in createGenericObject", err);
-                            throw err;
-                        } finally {
-                            if (sessionObj && app.destroySessionObject) {
-                                try { app.destroySessionObject(sessionObj.id); } catch (_) {}
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.error("ModernKPI: Error evaluating conditional background", e);
-                    // Nullify to prevent broken HTML from raw string
-                    layout.props.conditionalBgColor = null;
-                }
-            }
 
             try {
                 // Store backendApi reference if available (Qlik Sense provides this)
@@ -3022,7 +2433,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
 
                 // Width class for CSS fallback
                 const sizeClass = cardWidth <= 120 ? 'kpi-micro' : cardWidth <= 160 ? 'kpi-tiny' : cardWidth <= 220 ? 'kpi-compact' : '';
-                const heightClass = cardHeight <= 120 ? 'kpi-short' : cardHeight <= 150 ? 'kpi-medium-short' : '';
+                const heightClass = cardHeight <= 80 ? 'kpi-ultra-short' : cardHeight <= 120 ? 'kpi-short' : cardHeight <= 150 ? 'kpi-medium-short' : '';
+                const isDense = layout.props.denseMode === true;
 
                 // ============================================
                 // BUILD MAIN HEADER
@@ -3497,50 +2909,56 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 }
 
                 // ============================================
-                // POST-RENDER: Apply CSS classes & confirm sizes
+                // POST-RENDER: Cache selectors & apply styles
                 // ============================================
-                const $sizeWrapper = $element.find('.kpi-size-wrapper');
+                var $c = {
+                    sizeWrapper: $element.find('.kpi-size-wrapper'),
+                    mainValue:   $element.find('.main-value'),
+                    mainValNum:  $element.find('.main-val-num'),
+                    kpiTitle:    $element.find('.kpi-title'),
+                    compValues:  $element.find('.comp-value'),
+                    compTitles:  $element.find('.comp-title'),
+                    compArrows:  $element.find('.comp-arrow'),
+                    container:   $element.find('.kpi-container'),
+                    miniChart:   $element.find('.miniChart')
+                };
 
                 // Apply responsive size classes (CSS fallback for @container)
-                $sizeWrapper.removeClass('kpi-micro kpi-tiny kpi-compact kpi-short kpi-medium-short');
-                if (sizeClass) $sizeWrapper.addClass(sizeClass);
-                if (heightClass) $sizeWrapper.addClass(heightClass);
+                $c.sizeWrapper.removeClass('kpi-micro kpi-tiny kpi-compact kpi-ultra-short kpi-short kpi-medium-short kpi-dense');
+                if (sizeClass) $c.sizeWrapper.addClass(sizeClass);
+                if (heightClass) $c.sizeWrapper.addClass(heightClass);
+                if (isDense) $c.sizeWrapper.addClass('kpi-dense');
 
                 // Confirm main value styles
-                const $mainValue = $element.find('.main-value');
-                if ($mainValue.length > 0) {
-                    const mainValueEl = $mainValue[0];
+                if ($c.mainValue.length > 0) {
+                    const mainValueEl = $c.mainValue[0];
                     if (mainValueEl) {
                         mainValueEl.style.setProperty('font-size', scaledMainFont + 'px', 'important');
                         mainValueEl.style.setProperty('font-weight', mainValueFontWeight, 'important');
                         mainValueEl.style.setProperty('color', mainValueColor, 'important');
                         mainValueEl.style.setProperty('margin-bottom', mainValueMarginBottom + 'px');
-                        $mainValue.attr('data-color', mainValueColor);
+                        $c.mainValue.attr('data-color', mainValueColor);
                     }
                 }
 
                 // Apply scaled comparison value font sizes
-                const $compValues = $element.find('.comp-value');
-                $compValues.each(function () {
+                $c.compValues.each(function () {
                     this.style.setProperty('font-size', compFontSize + 'px', 'important');
                 });
 
                 // Apply scaled comparison title font sizes
-                const $compTitles = $element.find('.comp-title');
-                $compTitles.each(function () {
+                $c.compTitles.each(function () {
                     this.style.setProperty('font-size', scaledCompTitleFont + 'px', 'important');
                 });
 
                 // Apply scaled arrow sizes
-                const $compArrows = $element.find('.comp-arrow');
-                $compArrows.each(function () {
+                $c.compArrows.each(function () {
                     this.style.setProperty('font-size', scaledArrowFont + 'px', 'important');
                 });
 
                 // Apply scaled title font
-                const $kpiTitle = $element.find('.kpi-title');
-                if ($kpiTitle.length > 0) {
-                    $kpiTitle[0].style.setProperty('font-size', scaledTitleFont + 'px', 'important');
+                if ($c.kpiTitle.length > 0) {
+                    $c.kpiTitle[0].style.setProperty('font-size', scaledTitleFont + 'px', 'important');
                 }
 
                 // ============================================
@@ -3550,7 +2968,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     var animDuration = parseInt(layout.props.countUpDuration, 10) || 600;
 
                     // Main value — animate the inner .main-val-num span so prefix/suffix/icon stay stable
-                    var $mainValNum = $element.find('.main-val-num');
+                    var $mainValNum = $c.mainValNum;
                     if ($mainValNum.length > 0 && mainVal !== null && !isNaN(mainVal)) {
                         (function () {
                             var fmtType = layout.props.mainFormatType;
@@ -3597,7 +3015,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                         })();
                     }
 
-                    $compValues.each(function (idx) {
+                    $c.compValues.each(function (idx) {
                         if (idx < compRawVals.length) {
                             // Isolate the numeric text from arrows/icons/prefix/suffix
                             var $this = $(this);
@@ -3632,12 +3050,13 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 if (miniChartSvg && layout.props.showTooltip !== false) {
                     const tooltip = $("<div class='kpi-tooltip'></div>").appendTo("body");
                     $element.data("kpiChartTooltip", tooltip);
-                    const svg = $element.find(".miniChart");
+                    const svg = $c.miniChart;
 
                     if (svg.length && matrix.length > 0) {
+                        svg.off("mousemove.kpiChart mouseleave.kpiChart");
                         const hoverLine = svg.find(".miniChart-hover-line");
 
-                        svg.on("mousemove", function (evt) {
+                        svg.on("mousemove.kpiChart", function (evt) {
                             const offset = svg.offset();
                             const svgWidth = svg.width();
                             if (!svgWidth) return;
@@ -3665,7 +3084,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                                 .attr("x2", percentX + "%");
                         });
 
-                        svg.on("mouseleave", function () {
+                        svg.on("mouseleave.kpiChart", function () {
                             tooltip.css("opacity", 0);
                             hoverLine.css("opacity", 0);
                         });
@@ -3692,34 +3111,31 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
 
                     if ($flipCard.length) {
                         if (flipTrigger === "iconClick") {
-                            // Click-to-toggle mode — stays flipped until clicked again
-                            $iconTrigger.on("click", function (e) {
+                            $iconTrigger.off("click.kpiFlip").on("click.kpiFlip", function (e) {
                                 e.stopPropagation();
                                 var isFlipped = $flipCard.attr("data-flipped") === "1";
                                 $flipCard.css("transform", isFlipped ? "rotateY(0deg)" : "rotateY(180deg)");
                                 $flipCard.attr("data-flipped", isFlipped ? "0" : "1");
                             });
-                            // Also allow clicking anywhere on the back to unflip
-                            $element.find(".flip-card-back").on("click", function (e) {
+                            $element.find(".flip-card-back").off("click.kpiFlip").on("click.kpiFlip", function (e) {
                                 e.stopPropagation();
                                 $flipCard.css("transform", "rotateY(0deg)");
                                 $flipCard.attr("data-flipped", "0");
                             });
                         } else if (flipTrigger === "cardHover") {
-                            // Flip when hovering anywhere on the card
-                            $wrapper.on("mouseenter", function () {
+                            $wrapper.off("mouseenter.kpiFlip mouseleave.kpiFlip");
+                            $wrapper.on("mouseenter.kpiFlip", function () {
                                 $flipCard.css("transform", "rotateY(180deg)");
                             });
-                            $wrapper.on("mouseleave", function () {
+                            $wrapper.on("mouseleave.kpiFlip", function () {
                                 $flipCard.css("transform", "rotateY(0deg)");
                             });
                         } else {
-                            // Default: iconHover — flip on icon hover, unflip on card leave
                             if ($iconTrigger.length) {
-                                $iconTrigger.on("mouseenter", function () {
+                                $iconTrigger.off("mouseenter.kpiFlip").on("mouseenter.kpiFlip", function () {
                                     $flipCard.css("transform", "rotateY(180deg)");
                                 });
-                                $wrapper.on("mouseleave", function () {
+                                $wrapper.off("mouseleave.kpiFlip").on("mouseleave.kpiFlip", function () {
                                     $flipCard.css("transform", "rotateY(0deg)");
                                 });
                             }
@@ -3728,124 +3144,97 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 }
 
                 // ============================================
-                // EVALUATE TITLE EXPRESSIONS IF NEEDED
+                // BATCH EVALUATE ALL EXPRESSIONS (1 engine call)
                 // ============================================
                 var backendApiRef = getBackendApi(this, $element, layout);
-                var selfRef = this;
 
-                // Main title
+                // Collect all expressions that need evaluation
+                var exprBatch = {};
                 if (needsEvaluation && titleExpression && titleExpression.trim() !== "") {
-                    try {
-                        var mainEvalPromise = resolveExpression(titleExpression, backendApiRef, $element, layout);
-                        if (mainEvalPromise) {
-                            mainEvalPromise.then(function (result) {
-                                var evaluatedTitle = extractEvalResult(result, titleExpression);
-                                var escaped = escapeHtml(evaluatedTitle);
-                                var $titleEl = $element.find('.kpi-title');
-                                var $headerEl = $element.find('.kpi-header');
-                                if ($titleEl.length > 0) {
-                                    $titleEl.html(escaped);
-                                    if ($headerEl.length > 0) $headerEl.show();
-                                } else if (evaluatedTitle && String(evaluatedTitle).trim() !== "") {
-                                    // Create header dynamically
-                                    var fs = layout.props.mainTitleFontSize || 14;
-                                    var fw = layout.props.mainTitleFontWeight || "500";
-                                    var align = layout.props.mainTitleAlignment || "left";
-                                    var ha = align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start";
-                                    var iPos = layout.props.mainIconPosition || "left";
-                                    var iUrl = layout.props.titleIcon;
-                                    var iSize = layout.props.mainIconSize || 20;
-                                    var iHtml = iUrl ? '<img class="title-icon" src="' + iUrl + '" style="width:' + iSize + 'px;height:' + iSize + 'px;" alt="">' : "";
-                                    var titleSpan = '<div class="kpi-title-group"><span class="kpi-title" style="font-size:' + fs + 'px;font-weight:' + fw + ';">' + escaped + '</span></div>';
-                                    var hc = iPos === "right"
-                                        ? titleSpan + iHtml
-                                        : iHtml + titleSpan;
-                                    var $mv = $element.find('.main-value');
-                                    if ($mv.length > 0) {
-                                        $mv.before('<div class="kpi-header ' + (iPos === "top" ? "icon-top" : "") + '" data-align="' + align + '" data-icon-pos="' + iPos + '" style="justify-content:' + ha + ';">' + hc + '</div>');
-                                    }
+                    exprBatch._title = titleExpression;
+                }
+                if (subtitleParsed.needsEval && subtitleParsed.expression && subtitleParsed.expression.trim() !== "") {
+                    exprBatch._subtitle = subtitleParsed.expression;
+                }
+                comparisonSides.forEach(function (side) {
+                    if (evaluatedTitles[side] && evaluatedTitles[side].needsEval && evaluatedTitles[side].expr) {
+                        exprBatch["_comp_" + side] = evaluatedTitles[side].expr;
+                    }
+                });
+                var condBgExpr = layout.props.conditionalBgColor;
+                if (condBgExpr && typeof condBgExpr === "string" && condBgExpr.trim().charAt(0) === "=") {
+                    exprBatch._condBg = condBgExpr.trim().substring(1);
+                }
+
+                // Single batched call for all expressions
+                if (Object.keys(exprBatch).length > 0) {
+                    batchEvaluateExpressions(exprBatch, backendApiRef).then(function (results) {
+                        // Apply main title (reuse cached selectors)
+                        if (results._title !== undefined) {
+                            var escaped = escapeHtml(results._title);
+                            if ($c.kpiTitle.length > 0) {
+                                $c.kpiTitle.html(escaped);
+                                var $headerEl = $c.kpiTitle.closest('.kpi-header');
+                                if ($headerEl.length > 0) $headerEl.show();
+                            } else if (results._title && String(results._title).trim() !== "") {
+                                var fs = layout.props.mainTitleFontSize || 14;
+                                var fw = layout.props.mainTitleFontWeight || "500";
+                                var align = layout.props.mainTitleAlignment || "left";
+                                var ha = align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start";
+                                var iPos = layout.props.mainIconPosition || "left";
+                                var iUrl = layout.props.titleIcon;
+                                var iSize = layout.props.mainIconSize || 20;
+                                var iHtml = iUrl ? '<img class="title-icon" src="' + iUrl + '" style="width:' + iSize + 'px;height:' + iSize + 'px;" alt="">' : "";
+                                var titleSpan = '<div class="kpi-title-group"><span class="kpi-title" style="font-size:' + fs + 'px;font-weight:' + fw + ';">' + escaped + '</span></div>';
+                                var hc = iPos === "right" ? titleSpan + iHtml : iHtml + titleSpan;
+                                if ($c.mainValue.length > 0) {
+                                    $c.mainValue.before('<div class="kpi-header ' + (iPos === "top" ? "icon-top" : "") + '" data-align="' + align + '" data-icon-pos="' + iPos + '" style="justify-content:' + ha + ';">' + hc + '</div>');
                                 }
-                            }).catch(function () { /* ignore */ });
-                        } else if (titleExpression.trim() !== "") {
-                            // No API available — show cleaned-up expression text
-                            var $titleEl = $element.find('.kpi-title');
-                            if ($titleEl.length > 0) {
-                                $titleEl.html(escapeHtml(titleExpression));
                             }
                         }
-                    } catch (_) { /* ignore */ }
-                }
 
-                // Subtitle expression evaluation
-                if (subtitleParsed.needsEval && subtitleParsed.expression && subtitleParsed.expression.trim() !== "") {
-                    try {
-                        var subEvalPromise = resolveExpression(subtitleParsed.expression, backendApiRef, $element, layout);
-                        if (subEvalPromise) {
-                            subEvalPromise.then(function (result) {
-                                var evaluatedSub = extractEvalResult(result, subtitleParsed.expression);
-                                var escaped = escapeHtml(evaluatedSub);
-                                var $subEl = $element.find('.kpi-subtitle');
-                                if ($subEl.length > 0) {
-                                    $subEl.html(escaped);
-                                } else if (evaluatedSub && String(evaluatedSub).trim() !== "") {
-                                    // Create subtitle element dynamically inside title-group
-                                    var $titleGroup = $element.find('.kpi-title-group');
-                                    if ($titleGroup.length > 0) {
-                                        $titleGroup.append('<span class="kpi-subtitle" style="font-size:' + subtitleFontSize + 'px;color:' + subtitleColor + ';">' + escaped + '</span>');
-                                    }
+                        // Apply subtitle
+                        if (results._subtitle !== undefined) {
+                            var subEscaped = escapeHtml(results._subtitle);
+                            var $subEl = $element.find('.kpi-subtitle');
+                            if ($subEl.length > 0) {
+                                $subEl.html(subEscaped);
+                            } else if (results._subtitle && String(results._subtitle).trim() !== "") {
+                                var $titleGroup = $element.find('.kpi-title-group');
+                                if ($titleGroup.length > 0) {
+                                    $titleGroup.append('<span class="kpi-subtitle" style="font-size:' + subtitleFontSize + 'px;color:' + subtitleColor + ';">' + subEscaped + '</span>');
                                 }
-                            }).catch(function () { /* ignore */ });
+                            }
                         }
-                    } catch (_) { /* ignore */ }
-                }
 
-                // Comparison titles
-                comparisonSides.forEach(function (side) {
-                    if (!evaluatedTitles[side] || !evaluatedTitles[side].needsEval || !evaluatedTitles[side].expr) return;
-                    var titleExpr = evaluatedTitles[side].expr;
-                    try {
-                        var promise = resolveExpression(titleExpr, backendApiRef, $element, layout);
-                        if (promise) {
-                            promise.then(function (result) {
-                                var evaluated = extractEvalResult(result, titleExpr);
-                                var escaped = escapeHtml(evaluated);
-                                var enabledOrder = [];
-                                if (layout.props.enableLeft !== false) enabledOrder.push("left");
-                                if (layout.props.enableRight !== false) enabledOrder.push("right");
-                                if (layout.props.enableThird === true) enabledOrder.push("third");
+                        // Apply comparison titles (reuse cached $c.compTitles)
+                        var enabledOrder = [];
+                        if (layout.props.enableLeft !== false) enabledOrder.push("left");
+                        if (layout.props.enableRight !== false) enabledOrder.push("right");
+                        if (layout.props.enableThird === true) enabledOrder.push("third");
+                        comparisonSides.forEach(function (side) {
+                            var key = "_comp_" + side;
+                            if (results[key] !== undefined) {
+                                var compEscaped = escapeHtml(results[key]);
                                 var idx = enabledOrder.indexOf(side);
-                                if (idx >= 0) {
-                                    var $blocks = $element.find('.comp-block');
-                                    if ($blocks.length > idx) {
-                                        $($blocks[idx]).find('.comp-title').html(escaped);
-                                    }
+                                if (idx >= 0 && $c.compTitles.length > idx) {
+                                    $($c.compTitles[idx]).html(compEscaped);
                                 }
-                            }).catch(function () { /* ignore */ });
-                        }
-                    } catch (_) { /* ignore */ }
-                });
+                            }
+                        });
 
-                // Conditional Background Color
-                var condBgExpr = layout.props.conditionalBgColor;
-                if (condBgExpr && typeof condBgExpr === "string" && condBgExpr.trim().substring(0, 1) === "=") {
-                    var bgExpr = condBgExpr.trim().substring(1);
-                    try {
-                        var bgPromise = resolveExpression(bgExpr, backendApiRef, $element, layout);
-                        if (bgPromise) {
-                            bgPromise.then(function (result) {
-                                var evaluatedColor = extractEvalResult(result, null);
-                                if (evaluatedColor && evaluatedColor !== "NaN" && evaluatedColor !== "undefined") {
-                                    var finalBg = fixColor(evaluatedColor, null);
-                                    if (finalBg) {
-                                        $element[0].style.setProperty("--kpi-bg-color", finalBg, "important");
-                                        var $container = $element.find('.kpi-container');
-                                        // Override background with !important to defeat inline styles
-                                        $container.css("background", finalBg + " !important");
-                                    }
+                        // Apply conditional background (reuse cached $c.container)
+                        if (results._condBg !== undefined) {
+                            var evaluatedColor = results._condBg;
+                            if (evaluatedColor && evaluatedColor !== "NaN" && evaluatedColor !== "undefined") {
+                                var finalBg = fixColor(evaluatedColor, null);
+                                if (finalBg) {
+                                    $element[0].style.setProperty("--kpi-bg-color", finalBg, "important");
+                                    $c.container.css("background", finalBg + " !important");
                                 }
-                            }).catch(function () { /* ignore */ });
+                            }
                         }
-                    } catch (_) { /* ignore */ }
+                    }).catch(function () { /* ignore batch errors */ });
                 }
 
                 // ============================================
@@ -3853,9 +3242,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 // ============================================
                 var clickActionType = layout.props.clickActionType || "none";
                 if (clickActionType !== "none") {
-                    var $container = $element.find('.kpi-container');
-                    $container.addClass('kpi-clickable');
-                    $container.off('click.kpiNav').on('click.kpiNav', function (e) {
+                    $c.container.addClass('kpi-clickable');
+                    $c.container.off('click.kpiNav').on('click.kpiNav', function (e) {
                         // Don't navigate when clicking flip card triggers or other interactive elements
                         if ($(e.target).closest('.tooltip-icon-trigger, .flip-card-back').length) return;
 
