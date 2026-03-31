@@ -10,9 +10,14 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
      */
 
     // ============================================
-    // CSS INJECTION
+    // CSS INJECTION (guarded — inject once globally)
     // ============================================
-    $("<style>").html(cssContent).appendTo("head");
+    if (!document.getElementById("modern-kpi-ext-styles")) {
+        $("<style>")
+            .attr("id", "modern-kpi-ext-styles")
+            .html(cssContent)
+            .appendTo("head");
+    }
 
     // ============================================
     // UTILITY FUNCTIONS
@@ -2407,24 +2412,22 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     // Evaluate using a temporary generic object (Standard Qlik API)
                     // app.evaluate() is not reliably available in all versions
                     if (app && app.createGenericObject) {
+                        let sessionObj = null;
                         try {
-                            const sessionObj = await app.createGenericObject({
+                            sessionObj = await app.createGenericObject({
                                 customColor: {
                                     qStringExpression: expr
                                 }
                             });
                             const sessionLayout = await sessionObj.getLayout();
-                            const resultColor = sessionLayout.customColor;
-
-                            // Cleanup session object to prevent memory leaks
-                            if (app.destroySessionObject) {
-                                app.destroySessionObject(sessionObj.id);
-                            }
-
-                            layout.props.conditionalBgColor = resultColor;
+                            layout.props.conditionalBgColor = sessionLayout.customColor;
                         } catch (err) {
                             console.error("ModernKPI: Error in createGenericObject", err);
                             throw err;
+                        } finally {
+                            if (sessionObj && app.destroySessionObject) {
+                                try { app.destroySessionObject(sessionObj.id); } catch (_) {}
+                            }
                         }
                     }
                 } catch (e) {
@@ -2455,8 +2458,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     $element.removeClass('kpi-hide-hover-menu');
                     $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').removeClass('kpi-hide-hover-menu');
                 }
-                // Clear previous tooltip
-                $(".kpi-tooltip").remove();
+                // Clear previous tooltip (scoped to this card only)
+                $element.find(".kpi-tooltip").remove();
 
 
                 // Check if measures are defined - if not, show empty state
@@ -3412,39 +3415,98 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 `;
                 }
 
-                $element.html(html);
+                // ============================================
+                // SMART DOM UPDATE: only rebuild when structure changes.
+                // On value-only changes, patch in-place (no flash, no DOM thrash).
+                // ============================================
+                const structureKey = [
+                    isFlipCardMode ? 1 : 0,
+                    noChartClass,
+                    centerContentClass,
+                    bothModeClass,
+                    comparisonBlocks.length,
+                    hasTitle ? 1 : 0,
+                    mainIconPos,
+                    !!mainIconUrl ? 1 : 0,
+                    enableTooltip ? 1 : 0,
+                    mainValueAlignment,
+                    mainTitleAlignment,
+                    !!miniChartSvg ? 1 : 0
+                ].join("|");
 
-                // Add class to parent Qlik containers for scoped CSS targeting
-                $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').addClass('kpi-extension-wrapper');
+                const prevKey = $element.data("kpiStructKey");
+                const needsFullRebuild = prevKey !== structureKey;
 
-                // CRITICAL: Force parent Qlik containers to fill 100%
-                // Apply styles directly to ensure they take effect
-                $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').css({
-                    'width': '100%',
-                    'height': '100%',
-                    'padding': '0',
-                    'margin': '0',
-                    'box-sizing': 'border-box',
-                    'min-width': '0',
-                    'min-height': '0',
-                    'max-width': 'none',
-                    'max-height': 'none'
-                });
+                if (needsFullRebuild) {
+                    $element.html(html);
+                    $element.data("kpiStructKey", structureKey);
+
+                    // Parent setup only on first paint / structural change
+                    $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').addClass('kpi-extension-wrapper');
+                    $element.parents('.qv-object, .qv-object-wrapper, .qv-object-content, .qv-object-content-wrapper').css({
+                        'width': '100%',
+                        'height': '100%',
+                        'padding': '0',
+                        'margin': '0',
+                        'box-sizing': 'border-box',
+                        'min-width': '0',
+                        'min-height': '0',
+                        'max-width': 'none',
+                        'max-height': 'none'
+                    });
+                } else {
+                    // --- In-place patch: update values, colors, styles without rebuilding DOM ---
+                    const $container = $element.find('.kpi-container');
+                    if ($container.length) $container[0].setAttribute("style", cardStyle);
+
+                    // Patch main value text
+                    const $mainValNum = $element.find('.main-val-num');
+                    if ($mainValNum.length) $mainValNum.html(mainFormatted);
+
+                    // Patch header title
+                    const $titleEl = $element.find('.kpi-title');
+                    if ($titleEl.length && hasTitle) $titleEl.html(mainTitle);
+
+                    // Patch comparison values and titles
+                    const $compBlocks = $element.find('.comp-block');
+                    let compIdx = 0;
+                    if (enabledComparisons.includes("left")) {
+                        if ($compBlocks.length > compIdx) {
+                            $($compBlocks[compIdx]).find('.comp-num').html(leftFormatted);
+                        }
+                        compIdx++;
+                    }
+                    if (enabledComparisons.includes("right")) {
+                        if ($compBlocks.length > compIdx) {
+                            $($compBlocks[compIdx]).find('.comp-num').html(rightFormatted);
+                        }
+                        compIdx++;
+                    }
+                    if (enabledComparisons.includes("third")) {
+                        if ($compBlocks.length > compIdx) {
+                            $($compBlocks[compIdx]).find('.comp-num').html(thirdFormatted);
+                        }
+                        compIdx++;
+                    }
+
+                    // Patch chart SVG if present
+                    if (miniChartSvg) {
+                        const $chartContainer = $element.find('.chart-container');
+                        if ($chartContainer.length) $chartContainer.html(miniChartSvg);
+                    }
+                }
 
                 // ============================================
                 // POST-RENDER: Apply CSS classes & confirm sizes
-                // Font sizes were already calculated BEFORE HTML
-                // was built and are embedded in the template.
-                // This section adds responsive CSS classes and
-                // re-confirms dynamic values on the DOM elements.
                 // ============================================
                 const $sizeWrapper = $element.find('.kpi-size-wrapper');
 
                 // Apply responsive size classes (CSS fallback for @container)
+                $sizeWrapper.removeClass('kpi-micro kpi-tiny kpi-compact kpi-short kpi-medium-short');
                 if (sizeClass) $sizeWrapper.addClass(sizeClass);
                 if (heightClass) $sizeWrapper.addClass(heightClass);
 
-                // Re-confirm main value color (inline style + JS backup)
+                // Confirm main value styles
                 const $mainValue = $element.find('.main-value');
                 if ($mainValue.length > 0) {
                     const mainValueEl = $mainValue[0];
@@ -3452,6 +3514,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                         mainValueEl.style.setProperty('font-size', scaledMainFont + 'px', 'important');
                         mainValueEl.style.setProperty('font-weight', mainValueFontWeight, 'important');
                         mainValueEl.style.setProperty('color', mainValueColor, 'important');
+                        mainValueEl.style.setProperty('margin-bottom', mainValueMarginBottom + 'px');
                         $mainValue.attr('data-color', mainValueColor);
                     }
                 }
@@ -3481,9 +3544,9 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 }
 
                 // ============================================
-                // COUNT-UP ANIMATION
+                // COUNT-UP ANIMATION (only on full rebuild to avoid repeated flicker)
                 // ============================================
-                if (layout.props.enableCountUp !== false) {
+                if (needsFullRebuild && layout.props.enableCountUp !== false) {
                     var animDuration = parseInt(layout.props.countUpDuration, 10) || 600;
 
                     // Main value — animate the inner .main-val-num span so prefix/suffix/icon stay stable
@@ -3560,10 +3623,15 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 }
 
                 // ============================================
-                // MINI CHART TOOLTIP
+                // MINI CHART TOOLTIP (cleanup old tooltip, attach on rebuild or chart update)
                 // ============================================
+                if ($element.data("kpiChartTooltip")) {
+                    $element.data("kpiChartTooltip").remove();
+                    $element.removeData("kpiChartTooltip");
+                }
                 if (miniChartSvg && layout.props.showTooltip !== false) {
                     const tooltip = $("<div class='kpi-tooltip'></div>").appendTo("body");
+                    $element.data("kpiChartTooltip", tooltip);
                     const svg = $element.find(".miniChart");
 
                     if (svg.length && matrix.length > 0) {
@@ -3616,8 +3684,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 // The insight expression value is already set in flipCardBackContent above,
                 // so no additional processing is needed here.
 
-                // Add event listener for flip card trigger
-                if (isFlipCardMode) {
+                // Add event listener for flip card trigger (only on rebuild to avoid stacking handlers)
+                if (needsFullRebuild && isFlipCardMode) {
                     const $iconTrigger = $element.find(".tooltip-icon-trigger");
                     const $flipCard = $element.find(".kpi-flip-card");
                     const $wrapper = $element.find(".kpi-flip-card-wrapper");
