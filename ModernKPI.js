@@ -2983,38 +2983,37 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 const userMainFontSize = autoFitMainValue ? 200 : (layout.props.mainValueFontSize || 25);
                 const mainTextLen = String(mainFormatted).replace(/<[^>]*>/g, '').trim().length || 1;
 
-                // Constraint 1: Height cap — value gets 1/heightDiv of card height
-                // Adjusted for increased margins (8px) - slightly stricter divisors
-                const heightDiv = visibleCompCount > 0 ? (autoFitMainValue ? 5.5 : 8.5) : (autoFitMainValue ? 2.5 : 4.0);
+                // Constraint 1: Height cap — generous to respect user setting
+                const heightDiv = visibleCompCount > 0 ? (autoFitMainValue ? 4.0 : 5.5) : (autoFitMainValue ? 2.2 : 3.0);
                 const heightCap = cardHeight / heightDiv;
 
                 // Constraint 2: Text-width cap — value must fit horizontally
-                const pad = cardWidth <= 160 ? 16 : cardWidth <= 220 ? 20 : 36;
+                const pad = cardWidth <= 160 ? 12 : cardWidth <= 220 ? 16 : 28;
                 const fitWidth = Math.max(40, cardWidth - pad);
-                const textCap = fitWidth / (mainTextLen * 0.58);
+                const textCap = fitWidth / (mainTextLen * 0.56);
 
                 // Constraint 3: Width-proportional cap (relaxed in auto-fit mode)
-                const widthCap = autoFitMainValue ? cardWidth * 0.45 : cardWidth * 0.13;
+                const widthCap = autoFitMainValue ? cardWidth * 0.48 : cardWidth * 0.18;
 
                 // Pick the tightest constraint, floor at 10px
                 const scaledMainFont = Math.round(Math.max(10, Math.min(userMainFontSize, heightCap, textCap, widthCap)));
 
                 // --- Scale TITLE font size ---
                 const userTitleFont = layout.props.mainTitleFontSize || 14;
-                const scaledTitleFont = Math.round(Math.max(8, Math.min(userTitleFont, cardHeight / 12, cardWidth * 0.08)));
+                const scaledTitleFont = Math.round(Math.max(8, Math.min(userTitleFont, cardHeight / 7, cardWidth * 0.12)));
 
                 // --- Scale COMPARISON VALUE font size ---
                 let compFontSize = layout.props.compValueFontSize || 18;
-                const compHCap = cardHeight / 9;
-                const compWCap = cardWidth * 0.1;
+                const compHCap = cardHeight / 6.5;
+                const compWCap = cardWidth * 0.12;
                 compFontSize = Math.round(Math.max(9, Math.min(compFontSize, compHCap, compWCap)));
 
                 // --- Scale COMPARISON TITLE font size ---
                 const userCompTitleFont = layout.props.leftTitleFontSize || 12;
-                const scaledCompTitleFont = Math.round(Math.max(7, Math.min(userCompTitleFont, cardHeight / 14, cardWidth * 0.07)));
+                const scaledCompTitleFont = Math.round(Math.max(7, Math.min(userCompTitleFont, cardHeight / 9, cardWidth * 0.09)));
 
                 // --- Scale ARROW size ---
-                const scaledArrowFont = Math.round(Math.max(8, Math.min(14, cardHeight / 11, cardWidth * 0.08)));
+                const scaledArrowFont = Math.round(Math.max(8, Math.min(14, cardHeight / 9, cardWidth * 0.09)));
 
                 // Width class for CSS fallback
                 const sizeClass = cardWidth <= 120 ? 'kpi-micro' : cardWidth <= 160 ? 'kpi-tiny' : cardWidth <= 220 ? 'kpi-compact' : '';
@@ -3045,7 +3044,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 let subtitleDisplay = subtitleParsed.displayText;
                 const hasSubtitle = subtitleDisplay && String(subtitleDisplay).trim() !== "";
                 const subtitleText = hasSubtitle ? escapeHtml(subtitleDisplay) : "";
-                const subtitleFontSize = Math.round(Math.max(7, Math.min(layout.props.mainSubtitleFontSize || 11, cardHeight / 16, cardWidth * 0.055)));
+                const subtitleFontSize = Math.round(Math.max(7, Math.min(layout.props.mainSubtitleFontSize || 11, cardHeight / 10, cardWidth * 0.08)));
                 const subtitleColor = fixColor(layout.props.mainSubtitleColor, "#888888");
 
                 const scaledIconSize = Math.round(Math.max(14, Math.min(mainIconSize, cardHeight / 6, cardWidth * 0.12)));
@@ -3080,6 +3079,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 }
 
                 const headerAlignment = mainTitleAlignment === "center" ? "center" : mainTitleAlignment === "right" ? "flex-end" : "flex-start";
+                const iconOffset = mainIconUrl && mainIconPos !== "top" ? (scaledIconSize + 6) : 0;
+                const iconOffsetStyle = iconOffset > 0 ? `--kpi-icon-offset:${iconOffset}px;` : "";
 
                 // ============================================
                 // BUILD COMPARISON BLOCKS (only when comparison mode is active)
@@ -3362,7 +3363,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                             <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass} kpi-flip-card" style="${cardStyle}">
                                 ${tooltipIconHtml}
                                 <div class="flip-card-front-content">
-                                    ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" data-icon-pos="${mainIconPos}" style="justify-content:${headerAlignment} !important; width: 100%; display: flex;">
+                                    ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" data-icon-pos="${mainIconPos}" style="${iconOffsetStyle}justify-content:${headerAlignment} !important; width: 100%; display: flex;">
                                         ${headerContent}
                                     </div>` : ""}
                                     <div class="main-value ${mainValueAlignClass}" style="
@@ -3389,7 +3390,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     <div class="kpi-size-wrapper">
                         <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass}" style="${cardStyle}">
                             ${tooltipIconHtml}
-                            ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" data-icon-pos="${mainIconPos}" style="justify-content:${headerAlignment} !important; width: 100%; display: flex;">
+                            ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" data-icon-pos="${mainIconPos}" style="${iconOffsetStyle}justify-content:${headerAlignment} !important; width: 100%; display: flex;">
                                 ${headerContent}
                             </div>` : ""}
                             <div class="main-value ${mainValueAlignClass}" style="
