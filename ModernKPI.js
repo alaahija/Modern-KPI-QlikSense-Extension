@@ -1848,6 +1848,45 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 'position': 'relative'
             });
 
+            // Pre-render: evaluate conditional background expression so the
+            // resolved color is available when building the HTML template.
+            if (layout.props.conditionalBgColor && typeof layout.props.conditionalBgColor === 'string' &&
+                layout.props.conditionalBgColor.trim().charAt(0) === '=') {
+                try {
+                    var app = qlik.currApp(this) || qlik.currApp($element);
+                    var expr = layout.props.conditionalBgColor;
+                    expr = expr.replace(/\/\/.*$/gm, '');
+                    if (app && app.createGenericObject) {
+                        var sessionObj = null;
+                        try {
+                            sessionObj = await app.createGenericObject({
+                                customColor: { qStringExpression: expr }
+                            });
+                            var sessionLayout = await sessionObj.getLayout();
+                            var evaluated = sessionLayout.customColor;
+                            if (evaluated != null && String(evaluated).trim() !== '' &&
+                                String(evaluated) !== 'NaN' && String(evaluated) !== 'undefined') {
+                                var colorStr = String(evaluated).trim();
+                                if (/^\d+$/.test(colorStr)) {
+                                    var argb = parseInt(colorStr, 10);
+                                    var cr = (argb >> 16) & 0xFF, cg = (argb >> 8) & 0xFF, cb = argb & 0xFF;
+                                    colorStr = "#" + ((1 << 24) | (cr << 16) | (cg << 8) | cb).toString(16).slice(1);
+                                }
+                                layout.props.conditionalBgColor = colorStr;
+                            } else {
+                                layout.props.conditionalBgColor = null;
+                            }
+                        } finally {
+                            if (sessionObj && app.destroySessionObject) {
+                                try { app.destroySessionObject(sessionObj.id); } catch (_) {}
+                            }
+                        }
+                    }
+                } catch (e) {
+                    layout.props.conditionalBgColor = null;
+                }
+            }
+
             try {
                 // Store backendApi reference if available (Qlik Sense provides this)
                 if (this.backendApi && !$element.data("backendApi")) {
@@ -2293,6 +2332,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 // EXTRACT COLORS
                 // ============================================
                 // Conditional background color overrides static bgColor
+                // (expression is already evaluated in the pre-render block above)
                 const conditionalBg = layout.props.conditionalBgColor ? fixColor(layout.props.conditionalBgColor, null) : null;
                 const bgColor = conditionalBg || fixColor(layout.props.bgColor, "#ffffff");
                 const textColor = fixColor(layout.props.textColor, "#222222");
@@ -2879,26 +2919,34 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     const $titleEl = $element.find('.kpi-title');
                     if ($titleEl.length && hasTitle) $titleEl.html(mainTitle);
 
-                    // Patch comparison values and titles
+                    // Patch comparison blocks (full rebuild of each block to update arrows, colors, values)
                     const $compBlocks = $element.find('.comp-block');
-                    let compIdx = 0;
-                    if (enabledComparisons.includes("left")) {
-                        if ($compBlocks.length > compIdx) {
-                            $($compBlocks[compIdx]).find('.comp-num').html(leftFormatted);
-                        }
-                        compIdx++;
-                    }
-                    if (enabledComparisons.includes("right")) {
-                        if ($compBlocks.length > compIdx) {
-                            $($compBlocks[compIdx]).find('.comp-num').html(rightFormatted);
-                        }
-                        compIdx++;
-                    }
-                    if (enabledComparisons.includes("third")) {
-                        if ($compBlocks.length > compIdx) {
-                            $($compBlocks[compIdx]).find('.comp-num').html(thirdFormatted);
-                        }
-                        compIdx++;
+                    if ($compBlocks.length && showComparison) {
+                        // Temporarily set evaluated titles (same as full-rebuild path)
+                        comparisonSides.forEach(function (side) {
+                            originalTitles[side] = layout.props[side + "Title"];
+                            if (evaluatedTitles[side] && !evaluatedTitles[side].needsEval) {
+                                layout.props[side + "Title"] = evaluatedTitles[side].raw;
+                            } else if (evaluatedTitles[side] && evaluatedTitles[side].needsEval) {
+                                layout.props[side + "Title"] = "";
+                            }
+                        });
+                        let compIdx = 0;
+                        var patchSides = [];
+                        if (enabledComparisons.includes("left"))  patchSides.push({ side: "left",  val: leftVal,  fmt: leftFormatted });
+                        if (enabledComparisons.includes("right")) patchSides.push({ side: "right", val: rightVal, fmt: rightFormatted });
+                        if (enabledComparisons.includes("third")) patchSides.push({ side: "third", val: thirdVal, fmt: thirdFormatted });
+                        patchSides.forEach(function (entry) {
+                            if ($compBlocks.length > compIdx) {
+                                var newBlockHtml = buildComparisonBlock(entry.side, entry.val, entry.fmt, layout, compFontSize, layout.props.autoContrast, bgColor);
+                                $($compBlocks[compIdx]).replaceWith(newBlockHtml);
+                            }
+                            compIdx++;
+                        });
+                        // Restore original titles
+                        comparisonSides.forEach(function (side) {
+                            layout.props[side + "Title"] = originalTitles[side];
+                        });
                     }
 
                     // Patch chart SVG if present
@@ -3161,12 +3209,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                         exprBatch["_comp_" + side] = evaluatedTitles[side].expr;
                     }
                 });
-                var condBgExpr = layout.props.conditionalBgColor;
-                if (condBgExpr && typeof condBgExpr === "string" && condBgExpr.trim().charAt(0) === "=") {
-                    exprBatch._condBg = condBgExpr.trim().substring(1);
-                }
-
                 // Single batched call for all expressions
+                // (condBg is already evaluated in the pre-render await block)
                 if (Object.keys(exprBatch).length > 0) {
                     batchEvaluateExpressions(exprBatch, backendApiRef).then(function (results) {
                         // Apply main title (reuse cached selectors)
@@ -3223,17 +3267,6 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                             }
                         });
 
-                        // Apply conditional background (reuse cached $c.container)
-                        if (results._condBg !== undefined) {
-                            var evaluatedColor = results._condBg;
-                            if (evaluatedColor && evaluatedColor !== "NaN" && evaluatedColor !== "undefined") {
-                                var finalBg = fixColor(evaluatedColor, null);
-                                if (finalBg) {
-                                    $element[0].style.setProperty("--kpi-bg-color", finalBg, "important");
-                                    $c.container.css("background", finalBg + " !important");
-                                }
-                            }
-                        }
                     }).catch(function () { /* ignore batch errors */ });
                 }
 
