@@ -823,13 +823,6 @@
     /* Font size, color, and text-align are set inline */
 }
 
-.kpi-insight-description {
-    font-size: 13px;
-    line-height: 1.5;
-    color: #666;
-    margin-top: 4px;
-}
-
 /* Tooltip arrow */
 .kpi-tooltip-popup::before {
     content: "";
@@ -1242,6 +1235,11 @@
         padding: 10px !important;
     }
 
+    .comp-icon-top {
+        margin-bottom: 2px;
+        min-height: 16px;
+    }
+
     .kpi-header {
         margin-bottom: 4px !important;
         margin-top: 1px !important;
@@ -1340,6 +1338,11 @@
 @container kpi-card (max-width: 160px) {
     .kpi-container {
         padding: 8px !important;
+    }
+
+    .comp-icon-top {
+        margin-bottom: 1px;
+        min-height: 14px;
     }
 
     .kpi-header {
@@ -1444,6 +1447,11 @@
 @container kpi-card (max-width: 120px) {
     .kpi-container {
         padding: 6px !important;
+    }
+
+    .comp-icon-top {
+        margin-bottom: 0;
+        min-height: 12px;
     }
 
     .kpi-header {
@@ -1760,6 +1768,147 @@
 .kpi-short .title-icon {
     max-width: 16px;
     max-height: 16px;
+}
+
+/* Ultra-short cards (height ≤ 80px) - hide non-essential elements */
+.kpi-ultra-short .kpi-container {
+    padding: 4px 6px !important;
+}
+
+.kpi-ultra-short .kpi-header {
+    margin-top: 0 !important;
+    margin-bottom: 1px !important;
+}
+
+.kpi-ultra-short .kpi-header.icon-top {
+    gap: 2px;
+    margin-top: 0 !important;
+}
+
+.kpi-ultra-short .kpi-subtitle {
+    display: none !important;
+}
+
+.kpi-ultra-short .main-value {
+    margin-bottom: 0 !important;
+    line-height: 1.1;
+}
+
+.kpi-ultra-short .divider-h {
+    display: none !important;
+}
+
+.kpi-ultra-short .comparison-blocks {
+    margin-top: 1px !important;
+    margin-bottom: 0 !important;
+    gap: 2px;
+}
+
+.kpi-ultra-short .comp-title {
+    margin-bottom: 0;
+    line-height: 1;
+}
+
+.kpi-ultra-short .comp-value {
+    line-height: 1.1;
+}
+
+.kpi-ultra-short .comp-trend {
+    display: none !important;
+}
+
+.kpi-ultra-short .comp-icon-top {
+    display: none !important;
+}
+
+.kpi-ultra-short .chart-container {
+    display: none !important;
+}
+
+.kpi-ultra-short .title-icon {
+    max-width: 14px;
+    max-height: 14px;
+}
+
+/* ============================================
+   DENSE MODE - user-toggled compact layout
+   Strips non-essential whitespace for grid-heavy dashboards
+   ============================================ */
+.kpi-dense .kpi-container {
+    padding: 8px !important;
+}
+
+.kpi-dense .kpi-header {
+    margin-top: 0 !important;
+    margin-bottom: 2px !important;
+}
+
+.kpi-dense .kpi-header.icon-top {
+    gap: 3px;
+    margin-top: 0 !important;
+}
+
+.kpi-dense .main-value {
+    margin-bottom: 2px !important;
+    line-height: 1.15;
+}
+
+.kpi-dense .divider-h {
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+}
+
+.kpi-dense .comparison-blocks {
+    margin-top: 2px !important;
+    gap: 4px;
+}
+
+.kpi-dense .comp-block {
+    padding: 2px 0;
+}
+
+.kpi-dense .comp-title {
+    margin-bottom: 1px;
+}
+
+.kpi-dense .comp-value {
+    line-height: 1.15;
+}
+
+.kpi-dense .kpi-subtitle {
+    margin-top: 1px;
+}
+
+.kpi-dense .kpi-title-group {
+    gap: 1px;
+}
+
+.kpi-dense .chart-container {
+    margin-top: 2px;
+}
+
+.kpi-dense .title-icon {
+    max-width: 20px;
+    max-height: 20px;
+}
+
+/* Dense + short stacking: ultra-tight */
+.kpi-dense.kpi-short .kpi-container {
+    padding: 4px 6px !important;
+}
+
+.kpi-dense.kpi-short .main-value {
+    margin-bottom: 0 !important;
+}
+
+.kpi-dense.kpi-short .divider-h {
+    margin-top: 1px !important;
+    margin-bottom: 1px !important;
+}
+
+.kpi-dense.kpi-short .comparison-blocks {
+    margin-top: 1px !important;
+    gap: 2px;
 }
 
 /* ============================================
