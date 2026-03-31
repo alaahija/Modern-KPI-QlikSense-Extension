@@ -135,30 +135,21 @@
     background: var(--kpi-bg-color);
     color: var(--kpi-text-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    padding: 20px !important;
-    /* Internal padding for content */
+    padding: 16px !important;
     transition: box-shadow 0.3s ease, transform 0.3s ease, background 0.3s ease;
     width: 100% !important;
     height: 100% !important;
-    /* Fill the wrapper completely */
     min-height: 0 !important;
-    /* Remove fixed min-height to allow full expansion */
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
     position: relative !important;
     overflow: visible !important;
-    /* Must be visible for tooltips and flip card 3D transforms */
     margin: 0 !important;
-    margin-top: 0 !important;
-    margin-right: 0 !important;
-    margin-bottom: 0 !important;
-    margin-left: 0 !important;
     min-width: 0 !important;
     max-width: none !important;
     max-height: none !important;
-    /* Container fills wrapper and sizes naturally based on content */
 }
 
 /* Hover lift effect — subtle elevation + shadow */
@@ -223,8 +214,8 @@
 .kpi-header.icon-top {
     flex-direction: column;
     align-items: center;
-    gap: 16px;
-    margin-top: 12px;
+    gap: 6px;
+    margin-top: 4px;
     padding-left: 8px;
     padding-right: 8px;
 }
@@ -271,6 +262,30 @@
     vertical-align: middle;
     opacity: 0.85;
     flex-shrink: 0;
+}
+
+/* When icon is left or right (not top), pull it out of flow so the title stays centered */
+.kpi-header:not(.icon-top) {
+    position: relative;
+}
+
+.kpi-header:not(.icon-top) .title-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.kpi-header[data-icon-pos="left"]:not(.icon-top) .title-icon {
+    left: 0;
+}
+
+.kpi-header[data-icon-pos="right"]:not(.icon-top) .title-icon {
+    right: 0;
+}
+
+/* Title group takes full width when icon is absolute so it centers properly */
+.kpi-header:not(.icon-top) .kpi-title-group {
+    width: 100%;
 }
 
 .kpi-header.icon-top .title-icon {
@@ -1061,31 +1076,42 @@
     }
 
     .kpi-header {
-        margin-bottom: 14px !important;
+        margin-bottom: 10px !important;
         gap: 8px;
+    }
+
+    .kpi-header.icon-top {
+        gap: 10px;
     }
 
     .comparison-blocks {
         gap: 8px;
+        margin-top: 6px !important;
+        margin-bottom: 6px !important;
     }
 }
 
-/* --- MEDIUM cards (221px - 320px) - balanced layout --- */
+/* --- MEDIUM cards (241px - 320px) - balanced layout --- */
 @container kpi-card (max-width: 320px) {
     .kpi-container {
         padding: 14px !important;
     }
 
     .kpi-header {
-        margin-bottom: 10px !important;
+        margin-bottom: 8px !important;
         margin-top: 2px !important;
         gap: 6px;
         padding-left: 4px;
         padding-right: 4px;
     }
 
+    .kpi-header.icon-top {
+        gap: 6px;
+        margin-top: 4px;
+    }
+
     .main-value {
-        margin-bottom: 2px !important;
+        margin-bottom: 6px !important;
     }
 
     .kpi-container.no-chart .main-value {
@@ -1094,7 +1120,7 @@
 
     .comparison-blocks {
         gap: 6px;
-        margin-top: 2px !important;
+        margin-top: 4px !important;
         margin-bottom: 4px !important;
     }
 
@@ -1141,32 +1167,90 @@
     }
 }
 
-/* --- COMPACT cards (161px - 220px) - tight layout for grid spacing ~41 --- */
+/* --- SEMI-COMPACT cards (221px - 240px) - bridge between medium and compact --- */
+@container kpi-card (max-width: 240px) {
+    .kpi-container {
+        padding: 12px !important;
+    }
+
+    .kpi-header {
+        margin-bottom: 6px !important;
+        margin-top: 2px !important;
+        gap: 5px;
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+
+    .kpi-header.icon-top {
+        gap: 5px;
+        margin-top: 3px;
+    }
+
+    .main-value {
+        margin-bottom: 4px !important;
+        line-height: 1.2;
+    }
+
+    .kpi-container.no-chart .main-value {
+        margin-bottom: 6px !important;
+    }
+
+    .comparison-blocks {
+        gap: 5px;
+        margin-top: 3px !important;
+        margin-bottom: 3px !important;
+    }
+
+    .comp-title {
+        font-size: 10px;
+        margin-bottom: 2px;
+    }
+
+    .comp-value {
+        font-size: 14px;
+    }
+
+    .comp-arrow {
+        font-size: 11px;
+    }
+
+    .divider-v {
+        margin-top: 2px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .title-icon {
+        max-width: 22px;
+        max-height: 22px;
+    }
+}
+
+/* --- COMPACT cards (161px - 220px) - tight layout for grid spacing ~42 --- */
 @container kpi-card (max-width: 220px) {
     .kpi-container {
         padding: 10px !important;
     }
 
     .kpi-header {
-        margin-bottom: 6px !important;
-        margin-top: 2px !important;
+        margin-bottom: 4px !important;
+        margin-top: 1px !important;
         gap: 4px;
         padding-left: 2px;
         padding-right: 2px;
     }
 
     .kpi-header.icon-top {
-        gap: 6px;
-        margin-top: 4px;
+        gap: 4px;
+        margin-top: 2px;
     }
 
     .main-value {
-        margin-bottom: 0px !important;
+        margin-bottom: 2px !important;
         line-height: 1.15;
     }
 
     .kpi-container.no-chart .main-value {
-        margin-bottom: 6px !important;
+        margin-bottom: 4px !important;
     }
 
     .comparison-blocks {
@@ -1234,6 +1318,11 @@
         top: 6px !important;
         right: 6px !important;
     }
+
+    .title-icon {
+        max-width: 20px;
+        max-height: 20px;
+    }
 }
 
 /* --- TINY cards (≤ 160px) - minimal layout --- */
@@ -1243,7 +1332,7 @@
     }
 
     .kpi-header {
-        margin-bottom: 4px !important;
+        margin-bottom: 3px !important;
         margin-top: 1px !important;
         gap: 3px;
         padding-left: 0;
@@ -1251,17 +1340,17 @@
     }
 
     .kpi-header.icon-top {
-        gap: 4px;
-        margin-top: 2px;
+        gap: 3px;
+        margin-top: 1px;
     }
 
     .main-value {
-        margin-bottom: 0px !important;
+        margin-bottom: 2px !important;
         line-height: 1.1;
     }
 
     .kpi-container.no-chart .main-value {
-        margin-bottom: 4px !important;
+        margin-bottom: 3px !important;
     }
 
     .comparison-blocks {
@@ -1350,6 +1439,10 @@
         margin-bottom: 2px !important;
     }
 
+    .kpi-header.icon-top {
+        gap: 2px;
+    }
+
     .comparison-blocks {
         flex-direction: column !important;
         gap: 4px;
@@ -1390,20 +1483,25 @@
 }
 
 .kpi-compact .kpi-header {
-    margin-bottom: 6px !important;
-    margin-top: 2px !important;
+    margin-bottom: 4px !important;
+    margin-top: 1px !important;
     gap: 4px;
     padding-left: 2px;
     padding-right: 2px;
 }
 
+.kpi-compact .kpi-header.icon-top {
+    gap: 4px;
+    margin-top: 2px;
+}
+
 .kpi-compact .main-value {
-    margin-bottom: 0px !important;
+    margin-bottom: 2px !important;
     line-height: 1.15;
 }
 
 .kpi-compact .kpi-container.no-chart .main-value {
-    margin-bottom: 6px !important;
+    margin-bottom: 4px !important;
 }
 
 .kpi-compact .comparison-blocks {
@@ -1445,6 +1543,11 @@
 
 .kpi-compact .miniChart {
     height: 45px;
+}
+
+.kpi-compact .title-icon {
+    max-width: 20px;
+    max-height: 20px;
 }
 
 .kpi-compact .kpi-tooltip-icon-wrapper,
@@ -1555,6 +1658,38 @@
     display: none;
 }
 
+/* Medium-short cards (height 121-150px) - moderate vertical tightening */
+.kpi-medium-short .kpi-container {
+    padding-top: 8px !important;
+    padding-bottom: 6px !important;
+}
+
+.kpi-medium-short .kpi-header {
+    margin-top: 1px !important;
+    margin-bottom: 4px !important;
+}
+
+.kpi-medium-short .kpi-header.icon-top {
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.kpi-medium-short .main-value {
+    margin-bottom: 2px !important;
+    line-height: 1.15;
+}
+
+.kpi-medium-short .divider-h {
+    margin-top: 2px !important;
+    margin-bottom: 0 !important;
+}
+
+.kpi-medium-short .comparison-blocks {
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+    gap: 4px;
+}
+
 /* Short cards (height ≤ 120px) - tighten vertical spacing */
 .kpi-short .kpi-container {
     padding-top: 6px !important;
@@ -1566,8 +1701,13 @@
     margin-bottom: 2px !important;
 }
 
+.kpi-short .kpi-header.icon-top {
+    gap: 3px;
+    margin-top: 1px;
+}
+
 .kpi-short .main-value {
-    margin-bottom: 0px !important;
+    margin-bottom: 1px !important;
     line-height: 1.1;
 }
 
@@ -1576,13 +1716,13 @@
 }
 
 .kpi-short .divider-h {
-    margin-top: 0px !important;
+    margin-top: 1px !important;
     margin-bottom: 0 !important;
 }
 
 .kpi-short .comparison-blocks {
     margin-top: 1px !important;
-    margin-bottom: 0px !important;
+    margin-bottom: 1px !important;
     gap: 3px;
 }
 
@@ -1604,6 +1744,11 @@
 .kpi-short .kpi-subtitle {
     font-size: 8px;
     margin-top: 0;
+}
+
+.kpi-short .title-icon {
+    max-width: 16px;
+    max-height: 16px;
 }
 
 /* ============================================
@@ -1899,17 +2044,13 @@ div:has(> .kpi-container) {
 }
 
 /* Remove padding/margin from direct parents of our containers */
-.kpi-size-wrapper,
-.kpi-container {
+.kpi-size-wrapper {
     margin: 0 !important;
     padding: 0 !important;
 }
 
-/* But keep internal padding on .kpi-container for content spacing */
-.kpi-container {
-    padding: 20px !important;
-    /* Internal padding for content, not external spacing */
-}
+/* Internal padding on .kpi-container is managed by container queries above.
+   Do NOT set a flat 20px here — it overrides all responsive breakpoints. */
 
 /* ============================================
    VALUE PREFIX & SUFFIX

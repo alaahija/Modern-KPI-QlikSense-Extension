@@ -3018,7 +3018,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
 
                 // Width class for CSS fallback
                 const sizeClass = cardWidth <= 120 ? 'kpi-micro' : cardWidth <= 160 ? 'kpi-tiny' : cardWidth <= 220 ? 'kpi-compact' : '';
-                const heightClass = cardHeight <= 120 ? 'kpi-short' : '';
+                const heightClass = cardHeight <= 120 ? 'kpi-short' : cardHeight <= 150 ? 'kpi-medium-short' : '';
 
                 // ============================================
                 // BUILD MAIN HEADER
@@ -3048,8 +3048,9 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 const subtitleFontSize = Math.round(Math.max(7, Math.min(layout.props.mainSubtitleFontSize || 11, cardHeight / 16, cardWidth * 0.055)));
                 const subtitleColor = fixColor(layout.props.mainSubtitleColor, "#888888");
 
+                const scaledIconSize = Math.round(Math.max(14, Math.min(mainIconSize, cardHeight / 6, cardWidth * 0.12)));
                 const mainIconHtml = mainIconUrl
-                    ? `<img class="title-icon" src="${mainIconUrl}" style="width:${mainIconSize}px;height:${mainIconSize}px;" alt="">`
+                    ? `<img class="title-icon" src="${mainIconUrl}" style="width:${scaledIconSize}px;height:${scaledIconSize}px;" alt="">`
                     : "";
 
                 // Only build header content if title exists
@@ -3151,7 +3152,10 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     if (layout.props.dividerHPosition !== null && layout.props.dividerHPosition !== undefined && layout.props.dividerHPosition !== "") {
                         dividerMarginTop = `${layout.props.dividerHPosition}px`;
                     } else {
-                        dividerMarginTop = isChartDisabled ? "-8px" : "16px";
+                        const dividerGap = isChartDisabled
+                            ? Math.round(Math.max(0, Math.min(4, cardHeight / 40)))
+                            : Math.round(Math.max(2, Math.min(10, cardHeight / 16)));
+                        dividerMarginTop = `${dividerGap}px`;
                     }
                     const dividerMarginBottom = "0px";
                     const dividerHWidth = layout.props.dividerHWidth !== undefined ? layout.props.dividerHWidth : 1;
@@ -3328,6 +3332,13 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 }
 
                 // ============================================
+                // RESPONSIVE MAIN VALUE BOTTOM MARGIN
+                // ============================================
+                const mainValueMarginBottom = isChartDisabled
+                    ? Math.round(Math.max(2, Math.min(12, cardHeight / 14)))
+                    : Math.round(Math.max(2, Math.min(6, cardHeight / 30)));
+
+                // ============================================
                 // BUILD MAIN VALUE DISPLAY (prefix + icon + value + suffix)
                 // ============================================
                 const mainPrefix = layout.props.mainValuePrefix || "";
@@ -3351,7 +3362,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                             <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass} kpi-flip-card" style="${cardStyle}">
                                 ${tooltipIconHtml}
                                 <div class="flip-card-front-content">
-                                    ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" style="justify-content:${headerAlignment} !important; width: 100%; display: flex;">
+                                    ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" data-icon-pos="${mainIconPos}" style="justify-content:${headerAlignment} !important; width: 100%; display: flex;">
                                         ${headerContent}
                                     </div>` : ""}
                                     <div class="main-value ${mainValueAlignClass}" style="
@@ -3359,7 +3370,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                                         font-weight: ${mainValueFontWeight} !important;
                                         text-align: ${mainValueAlignment} !important;
                                         color: ${mainValueColor} !important;
-                                        margin-bottom: ${isChartDisabled ? '12px' : '4px'};
+                                        margin-bottom: ${mainValueMarginBottom}px;
                                     ">
                                         ${mainValueInner}
                                     </div>
@@ -3378,7 +3389,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     <div class="kpi-size-wrapper">
                         <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass}" style="${cardStyle}">
                             ${tooltipIconHtml}
-                            ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" style="justify-content:${headerAlignment} !important; width: 100%; display: flex;">
+                            ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" data-icon-pos="${mainIconPos}" style="justify-content:${headerAlignment} !important; width: 100%; display: flex;">
                                 ${headerContent}
                             </div>` : ""}
                             <div class="main-value ${mainValueAlignClass}" style="
@@ -3386,7 +3397,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                                 font-weight: ${mainValueFontWeight} !important;
                                 text-align: ${mainValueAlignment} !important;
                                 color: ${mainValueColor} !important;
-                                margin-bottom: ${isChartDisabled ? '12px' : '4px'};
+                                margin-bottom: ${mainValueMarginBottom}px;
                             ">
                                 ${mainValueInner}
                             </div>
@@ -3680,7 +3691,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                                         : iHtml + titleSpan;
                                     var $mv = $element.find('.main-value');
                                     if ($mv.length > 0) {
-                                        $mv.before('<div class="kpi-header ' + (iPos === "top" ? "icon-top" : "") + '" data-align="' + align + '" style="justify-content:' + ha + ';">' + hc + '</div>');
+                                        $mv.before('<div class="kpi-header ' + (iPos === "top" ? "icon-top" : "") + '" data-align="' + align + '" data-icon-pos="' + iPos + '" style="justify-content:' + ha + ';">' + hc + '</div>');
                                     }
                                 }
                             }).catch(function () { /* ignore */ });
