@@ -132,15 +132,6 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
         return measure;
     }
 
-    function extractEvalResult(result, fallback) {
-        if (!result) return fallback;
-        if (result.qText !== undefined && result.qText !== null) return result.qText;
-        if (result.qNum !== undefined && result.qNum !== null) return String(result.qNum);
-        if (typeof result === "string") return result;
-        if (typeof result === "number") return String(result);
-        return String(result);
-    }
-
     function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
     function animateCountUp(el, endVal, duration, formatFn, finalText) {
@@ -275,95 +266,6 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
             return '<div class="comp-block"><div class="comp-icon-top">' + iconHtml + '</div><div class="comp-title" style="font-size:' + titleFontSize + 'px;font-weight:' + titleFontWeight + ';">' + title + '</div><div class="comp-value" style="font-size:' + compFontSize + 'px;font-weight:' + valueFontWeight + ';color:' + finalValueColor + '">' + arrow + prefixHtml + formatted + suffixHtml + '</div>' + trendHtml + '</div>';
         }
         return '<div class="comp-block"><div class="comp-title" style="font-size:' + titleFontSize + 'px;font-weight:' + titleFontWeight + ';">' + title + '</div><div class="comp-value" style="font-size:' + compFontSize + 'px;font-weight:' + valueFontWeight + ';color:' + finalValueColor + '">' + (iconPos === "before" ? iconHtml : "") + arrow + prefixHtml + formatted + suffixHtml + (iconPos === "after" ? iconHtml : "") + '</div>' + trendHtml + '</div>';
-    }
-
-    // ============================================
-    // SECTION 3: QLIK-DEPENDENT HELPERS
-    // ============================================
-
-    /**
-     * Obtain a reference to the backendApi, caching it on `self` and `$element`.
-     */
-    function getBackendApi(self, $element, layout) {
-        var ref = self.backendApi || $element.data("backendApi");
-        if (!ref && typeof qlik !== "undefined" && layout.qInfo && layout.qInfo.qId) {
-            try {
-                if (typeof qlik.getObject === "function") {
-                    var obj = qlik.getObject(layout.qInfo.qId);
-                    if (obj && obj.backendApi) {
-                        ref = obj.backendApi;
-                    }
-                }
-            } catch (_) { /* ignore */ }
-        }
-        if (ref) {
-            self.backendApi = ref;
-            $element.data("backendApi", ref);
-        }
-        return ref;
-    }
-
-    /**
-     * Batch-evaluate multiple expressions in a single Qlik engine call.
-     * @param {Object} exprMap - { key: "expression string", ... }
-     * @param {Object} backendApiRef - backendApi reference
-     * @returns {Promise<Object>} - { key: "evaluated result string", ... }
-     *
-     * Uses createGenericObject (1 engine call) when available,
-     * falls back to parallel evaluateExpression calls otherwise.
-     */
-    function batchEvaluateExpressions(exprMap, backendApiRef) {
-        var keys = Object.keys(exprMap);
-        if (keys.length === 0) return $.Deferred().resolve({}).promise();
-
-        // Try createGenericObject (1 call for all expressions)
-        var app = null;
-        try { app = qlik.currApp(); } catch (_) {}
-
-        if (app && typeof app.createGenericObject === "function") {
-            var objDef = {};
-            keys.forEach(function (k) {
-                objDef[k] = { qStringExpression: exprMap[k] };
-            });
-            return app.createGenericObject(objDef).then(function (sessionObj) {
-                return sessionObj.getLayout().then(function (lo) {
-                    var results = {};
-                    keys.forEach(function (k) {
-                        results[k] = lo[k] != null ? String(lo[k]) : "";
-                    });
-                    if (app.destroySessionObject) {
-                        try { app.destroySessionObject(sessionObj.id); } catch (_) {}
-                    }
-                    return results;
-                });
-            });
-        }
-
-        // Fallback: parallel individual evaluateExpression calls
-        var promises = {};
-        keys.forEach(function (k) {
-            var p = null;
-            if (backendApiRef && typeof backendApiRef.evaluateExpression === "function") {
-                p = backendApiRef.evaluateExpression(exprMap[k]);
-            } else if (app && typeof app.evaluateExpression === "function") {
-                p = app.evaluateExpression(exprMap[k]);
-            }
-            promises[k] = p || $.Deferred().resolve(null).promise();
-        });
-
-        var deferred = $.Deferred();
-        var promiseArr = keys.map(function (k) { return promises[k]; });
-        $.when.apply($, promiseArr).then(function () {
-            var args = arguments;
-            var results = {};
-            keys.forEach(function (k, i) {
-                results[k] = extractEvalResult(args[i], "");
-            });
-            deferred.resolve(results);
-        }, function () {
-            deferred.resolve({});
-        });
-        return deferred.promise();
     }
 
     // ============================================
