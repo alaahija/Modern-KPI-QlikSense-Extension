@@ -1170,6 +1170,53 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                                     defaultValue: "",
                                     help: "Expression returning a color (e.g. =If(Sum(Sales)>1000,'#4CAF50','#F44336')). Overrides background when not empty."
                                 },
+                                conditionalBgType: {
+                                    ref: "props.conditionalBgType",
+                                    label: "Conditional Background Style",
+                                    type: "string",
+                                    component: "dropdown",
+                                    defaultValue: "solid",
+                                    options: [
+                                        { value: "solid", label: "Solid Color" },
+                                        { value: "gradient", label: "Gradient Fade" }
+                                    ],
+                                    show: function (d) {
+                                        return d.props && d.props.conditionalBgColor && d.props.conditionalBgColor.toString().trim() !== "";
+                                    }
+                                },
+                                conditionalGradientDirection: {
+                                    ref: "props.conditionalGradientDirection",
+                                    label: "Gradient Direction",
+                                    type: "string",
+                                    component: "dropdown",
+                                    defaultValue: "to right",
+                                    options: [
+                                        { value: "to right", label: "Left → Right" },
+                                        { value: "to left", label: "Right → Left" },
+                                        { value: "to bottom", label: "Top → Bottom" },
+                                        { value: "to top", label: "Bottom → Top" },
+                                        { value: "to bottom right", label: "Diagonal ↘" },
+                                        { value: "to bottom left", label: "Diagonal ↙" },
+                                        { value: "to top right", label: "Diagonal ↗" },
+                                        { value: "to top left", label: "Diagonal ↖" }
+                                    ],
+                                    show: function (d) {
+                                        return d.props && d.props.conditionalBgColor && d.props.conditionalBgColor.toString().trim() !== ""
+                                            && d.props.conditionalBgType === "gradient";
+                                    }
+                                },
+                                conditionalGradientEndColor: {
+                                    ref: "props.conditionalGradientEndColor",
+                                    label: "Gradient End Color",
+                                    type: "string",
+                                    component: "color-picker",
+                                    defaultValue: "#ffffff",
+                                    dualOutput: true,
+                                    show: function (d) {
+                                        return d.props && d.props.conditionalBgColor && d.props.conditionalBgColor.toString().trim() !== ""
+                                            && d.props.conditionalBgType === "gradient";
+                                    }
+                                },
                                 borderColor: {
                                     ref: "props.borderColor",
                                     label: "Border Color",
@@ -2262,6 +2309,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 // Conditional background color overrides static bgColor
                 // (expression is already evaluated in the pre-render block above)
                 const conditionalBg = layout.props.conditionalBgColor ? fixColor(layout.props.conditionalBgColor, null) : null;
+                const conditionalBgType = layout.props.conditionalBgType || "solid";
                 const bgColor = conditionalBg || fixColor(layout.props.bgColor, "#ffffff");
                 const textColor = fixColor(layout.props.textColor, "#222222");
 
@@ -2275,13 +2323,21 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 // ============================================
                 // BUILD STYLES
                 // ============================================
-                // Build background (solid or gradient)
+                // Build background (solid, gradient, or conditional gradient)
                 const isGradient = layout.props.enableGradient === true;
-                const bgColor2 = isGradient ? fixColor(layout.props.bgColor2, "#667eea") : bgColor;
-                const gradientDir = layout.props.gradientDirection || "to right";
-                const cardBackground = isGradient
-                    ? `linear-gradient(${gradientDir}, ${bgColor}, ${bgColor2})`
-                    : bgColor;
+                var cardBackground;
+
+                if (conditionalBg && conditionalBgType === "gradient") {
+                    const condGradDir = layout.props.conditionalGradientDirection || "to right";
+                    const condGradEnd = fixColor(layout.props.conditionalGradientEndColor, "#ffffff");
+                    cardBackground = `linear-gradient(${condGradDir}, ${conditionalBg}, ${condGradEnd})`;
+                } else if (isGradient) {
+                    const bgColor2 = fixColor(layout.props.bgColor2, "#667eea");
+                    const gradientDir = layout.props.gradientDirection || "to right";
+                    cardBackground = `linear-gradient(${gradientDir}, ${bgColor}, ${bgColor2})`;
+                } else {
+                    cardBackground = bgColor;
+                }
 
                 // Build box-shadow from shadow depth
                 const shadowDepth = layout.props.shadowDepth || "none";
