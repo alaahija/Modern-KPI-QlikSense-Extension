@@ -1,6 +1,6 @@
 # Modern KPI Card for Qlik Sense
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg) ![Qlik Sense](https://img.shields.io/badge/Qlik%20Sense-Compatible-green.svg) ![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)
+![Version](https://img.shields.io/badge/version-2.1.0-blue.svg) ![Qlik Sense](https://img.shields.io/badge/Qlik%20Sense-Compatible-green.svg) ![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)
 
 **Modern KPI Card** is a powerful, highly customizable visualization extension for Qlik Sense. It goes beyond simple metrics to provide context, comparisons, and trends in a clean, responsive design.
 
@@ -41,6 +41,9 @@ Display a comprehensive view with **1 Main KPI** and up to **3 Comparison KPIs**
  | **Mini Charts** | Visualize trends directly on the card with **Sparklines**, **Line Charts**, or **Bar Charts**. |
  | **Flip Card Insights** | Interactive "flip" animation reveals detailed descriptions and additional metrics on the back of the card. |
  | **Conditional Styling** | Set colors for backgrounds, values, and text dynamically using powerful Qlik expressions. |
+ | **Gradient Backgrounds** | Apply linear gradients with configurable direction, start/end colors, and expression-driven dynamic gradients. |
+ | **Alert System** | Expression-based alerts with in-card banners (top/bottom) or corner badges, custom colors, and optional browser desktop notifications. |
+ | **Inverted Layout** | Promote comparison KPIs to the top as primary values, with the main KPI displayed smaller below — ideal for side-by-side comparison focus. |
  | **Advanced Formatting** | Full control over number formats including **K/M/B** scaling, **Currency**, **Percentage**, and **Duration** (e.g., `123:45:00`). |
  | **Interactions** | Click actions to navigate to other sheets or open external URLs. |
  
@@ -131,7 +134,7 @@ When using **Mini Chart + Comparison Values together** ("Both" mode), ensure you
 MIT License - feel free to use and modify!
 
 **Author:** Ala Aldin Hija
-**Version:** 2.0.0
+**Version:** 2.1.0
 
 ## Quick Start
 1. Add the **Main KPI** measure.
@@ -139,6 +142,8 @@ MIT License - feel free to use and modify!
 3. Configure **Display Mode**: Comparison KPIs, Mini Chart, Both, or None.
 4. Optionally add a **Click Action** (Go to Sheet / Open URL) in the Interactions section.
 5. Style with colors, gradients, shadows, and conditional background expressions.
+6. Optionally enable **Alerts** with a Qlik expression to show in-card warnings.
+7. Optionally enable **Invert Layout** to promote comparisons as primary values.
 
 ---
 
@@ -157,6 +162,56 @@ On Click: None / Go to Sheet / Open URL (with new tab option).
 
 ### Conditional Background
 Expression field returning a CSS color (e.g., `=If(Sum(Sales)>100000, '#4CAF50', '#F44336')`). Overrides the static background color.
+
+### Gradient Background
+Apply a smooth linear gradient instead of a flat color. Found in **Appearance Options > Colors & Border**.
+
+| Setting | Description |
+|---------|-------------|
+| **Enable Gradient** | Toggle gradient mode on/off. |
+| **Direction** | Choose gradient direction: Top→Bottom, Bottom→Top, Left→Right, Right→Left, or Diagonal. |
+| **Start Color** | The first color of the gradient. Supports expressions (e.g., `=If(Sum(Sales)>0, '#e8f5e9', '#ffebee')`). |
+| **End Color** | The second color of the gradient. Supports expressions. |
+
+**Example:** A gradient from green to white when sales are positive:
+*   Start Color: `=If(Sum(Sales) > 0, '#c8e6c9', '#ffcdd2')`
+*   End Color: `#ffffff`
+*   Direction: Top → Bottom
+
+### Alert System
+Display in-card alerts when a condition is met. Found in the **Alerts** section of the property panel.
+
+| Setting | Description |
+|---------|-------------|
+| **Enable Alert** | Toggle the alert system on/off. |
+| **Alert Expression** | A Qlik expression that returns `1` (alert ON) or `0` (alert OFF). Example: `=If(Sum(Sales) < Sum(Target) * 0.5, 1, 0)` |
+| **Alert Message** | Custom text shown in the alert banner (e.g., "⚠ Below Target"). |
+| **Position** | Where the alert appears: **Top Banner**, **Bottom Banner**, or **Corner Badge**. |
+| **Background Color** | Alert banner background color (default: red). |
+| **Text Color** | Alert text color (default: white). |
+| **Font Size** | Alert text size in pixels. |
+| **Browser Notification** | Optionally trigger a desktop browser notification when the alert fires. |
+
+**Tips:**
+*   The expression approach gives you full flexibility — use any Qlik logic to define when alerts should fire.
+*   Browser notifications require user permission and only fire once per alert trigger (reset when the condition clears).
+*   The alert banner automatically makes room for the tooltip icon when both are active.
+
+### Inverted Layout (Comparisons on Top)
+Swap the visual hierarchy so comparison KPIs appear prominently at the top and the main value sits below. Found in **Secondary Metrics & Chart** section.
+
+| Setting | Description |
+|---------|-------------|
+| **Invert Layout** | Toggle to show comparisons above the main value. Only visible when Display Mode includes comparisons. |
+
+**When enabled:**
+*   Comparison values are displayed larger at the top of the card.
+*   A horizontal divider separates comparisons from the main value below.
+*   The main KPI title moves down next to the main value.
+*   The main value font automatically shrinks to give comparisons visual priority.
+*   All sizing is responsive — works at any card size.
+
+**Use case:** When you have two key metrics (e.g., Total Orders Default vs. Total Orders Comparing) and the comparison itself (the % change) is the main KPI, enable inverted layout to show the two metrics prominently and the change below.
 
 ---
 
