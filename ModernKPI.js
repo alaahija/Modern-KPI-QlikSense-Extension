@@ -2606,10 +2606,9 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 const compTitleTextCap = compAvailWidth / (longestCompTitle * 0.52);
                 const scaledCompTitleFont = Math.round(Math.max(8, Math.min(userCompTitleFont, cardHeight / 12, compTitleTextCap)));
 
-                // --- Inverted layout: shrink main value, boost comparison values ---
+                // --- Inverted layout: main value becomes secondary, scale it down ---
                 if (layout.props.invertLayout) {
-                    scaledMainFont = Math.round(scaledMainFont * 0.5);
-                    compFontSize = Math.round(Math.max(compFontSize, scaledMainFont * 1.1, 14));
+                    scaledMainFont = Math.round(scaledMainFont * 0.65);
                 }
 
                 // --- Scale ARROW size ---
