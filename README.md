@@ -176,25 +176,6 @@ Apply a smooth linear gradient instead of a flat color. Found in **Appearance Op
 *   End Color: `#ffffff`
 *   Direction: Top → Bottom
 
-### Alert System
-Display in-card alerts when a condition is met. Found in the **Alerts** section of the property panel.
-
-| Setting | Description |
-|---------|-------------|
-| **Enable Alert** | Toggle the alert system on/off. |
-| **Alert Expression** | A Qlik expression that returns `1` (alert ON) or `0` (alert OFF). Example: `=If(Sum(Sales) < Sum(Target) * 0.5, 1, 0)` |
-| **Alert Message** | Custom text shown in the alert banner (e.g., "⚠ Below Target"). |
-| **Position** | Where the alert appears: **Top Banner**, **Bottom Banner**, or **Corner Badge**. |
-| **Background Color** | Alert banner background color (default: red). |
-| **Text Color** | Alert text color (default: white). |
-| **Font Size** | Alert text size in pixels. |
-| **Browser Notification** | Optionally trigger a desktop browser notification when the alert fires. |
-
-**Tips:**
-*   The expression approach gives you full flexibility — use any Qlik logic to define when alerts should fire.
-*   Browser notifications require user permission and only fire once per alert trigger (reset when the condition clears).
-*   The alert banner automatically makes room for the tooltip icon when both are active.
-
 ### Inverted Layout (Comparisons on Top)
 Swap the visual hierarchy so comparison KPIs appear prominently at the top and the main value sits below. Found in **Secondary Metrics & Chart** section.
 
