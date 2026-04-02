@@ -42,7 +42,6 @@ Display a comprehensive view with **1 Main KPI** and up to **3 Comparison KPIs**
  | **Flip Card Insights** | Interactive "flip" animation reveals detailed descriptions and additional metrics on the back of the card. |
  | **Conditional Styling** | Set colors for backgrounds, values, and text dynamically using powerful Qlik expressions. |
  | **Gradient Backgrounds** | Apply linear gradients with configurable direction, start/end colors, and expression-driven dynamic gradients. |
- | **Alert System** | Expression-based alerts with in-card banners (top/bottom) or corner badges, custom colors, and optional browser desktop notifications. |
  | **Inverted Layout** | Promote comparison KPIs to the top as primary values, with the main KPI displayed smaller below — ideal for side-by-side comparison focus. |
  | **Advanced Formatting** | Full control over number formats including **K/M/B** scaling, **Currency**, **Percentage**, and **Duration** (e.g., `123:45:00`). |
  | **Interactions** | Click actions to navigate to other sheets or open external URLs. |
