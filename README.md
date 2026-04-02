@@ -168,7 +168,7 @@ Apply a smooth linear gradient instead of a flat color. Found in **Appearance Op
 |---------|-------------|
 | **Enable Gradient** | Toggle gradient mode on/off. |
 | **Direction** | Choose gradient direction: Top→Bottom, Bottom→Top, Left→Right, Right→Left, or Diagonal. |
-| **Start Color** | The first color of the gradient. Supports expressions (e.g., `=If(Sum(Sales)>0, '#e8f5e9', '#ffebee')`). |
+| **Start Color** | The first color of the gradient. Supports expressions (e.g., `=If(Sum(Sales)>100, '#e8f5e9', '#ffebee')`). |
 | **End Color** | The second color of the gradient. Supports expressions. |
 
 **Example:** A gradient from green to white when sales are positive:
