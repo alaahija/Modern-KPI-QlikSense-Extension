@@ -999,7 +999,11 @@
     justify-content: center;
     gap: 3px;
     line-height: 1.2;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
     margin: 0;
     padding: 0;
     min-height: 1.2em;
@@ -2347,4 +2351,142 @@ div:has(> .kpi-container) {
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
+}
+
+/* ============================================
+   ALERT SYSTEM
+   ============================================ */
+
+/* Alert banner (top or bottom) */
+.kpi-alert-banner {
+    padding: 4px 10px;
+    text-align: center;
+    font-weight: 600;
+    position: relative;
+    z-index: 5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 3px;
+    margin: 2px 0;
+    letter-spacing: 0.3px;
+    animation: kpiAlertPulse 2s ease-in-out infinite;
+}
+
+.kpi-alert-top {
+    margin-bottom: 4px;
+}
+
+.kpi-alert-bottom {
+    margin-top: 4px;
+}
+
+/* Corner badge */
+.kpi-alert-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 2px 8px;
+    font-weight: 600;
+    white-space: nowrap;
+    border-radius: 10px;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    animation: kpiAlertPulse 2s ease-in-out infinite;
+}
+
+@keyframes kpiAlertPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* --- Alert + Tooltip coexistence ---
+   When both tooltip icon and top alert banner exist, the banner must
+   leave room for the icon, and the icon must stay above the banner. */
+
+.kpi-container.has-tooltip .kpi-alert-banner.kpi-alert-top,
+.kpi-container:has(.kpi-tooltip-icon-wrapper) .kpi-alert-banner.kpi-alert-top,
+.kpi-container:has(.tooltip-icon-trigger) .kpi-alert-banner.kpi-alert-top {
+    margin-right: 28px;
+}
+
+.kpi-container.has-tooltip .kpi-alert-badge,
+.kpi-container:has(.kpi-tooltip-icon-wrapper) .kpi-alert-badge,
+.kpi-container:has(.tooltip-icon-trigger) .kpi-alert-badge {
+    right: 32px;
+}
+
+.kpi-container.has-alert-top > .kpi-tooltip-icon-wrapper,
+.kpi-container.has-alert-top > .tooltip-icon-trigger,
+.kpi-container:has(.kpi-alert-banner.kpi-alert-top) > .kpi-tooltip-icon-wrapper,
+.kpi-container:has(.kpi-alert-banner.kpi-alert-top) > .tooltip-icon-trigger {
+    z-index: 1001;
+}
+
+/* ============================================
+   INVERTED LAYOUT
+   Comparisons promoted to top, main value below.
+   ============================================ */
+.kpi-container.kpi-inverted {
+    justify-content: flex-start !important;
+}
+
+/* --- Ordering --- */
+.kpi-container.kpi-inverted .kpi-alert-banner.kpi-alert-top {
+    order: 1;
+    flex-shrink: 0;
+}
+
+.kpi-container.kpi-inverted .comparison-blocks {
+    order: 2;
+    margin-top: 4px;
+    margin-bottom: 0;
+    padding-top: 0;
+    flex: 1 1 auto;
+    align-items: center !important;
+    min-height: 0;
+}
+
+.kpi-container.kpi-inverted .divider-h {
+    order: 3;
+    margin: 4px 0 2px 0 !important;
+    flex-shrink: 0;
+}
+
+.kpi-container.kpi-inverted .kpi-header {
+    order: 4;
+    margin-top: 2px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.kpi-container.kpi-inverted .main-value {
+    order: 5;
+    margin-top: 0 !important;
+    margin-bottom: 2px !important;
+    padding-top: 0;
+    flex-shrink: 0;
+}
+
+.kpi-container.kpi-inverted .chart-container {
+    order: 6;
+    flex-shrink: 0;
+}
+
+.kpi-container.kpi-inverted .kpi-alert-banner.kpi-alert-bottom {
+    order: 7;
+    flex-shrink: 0;
+}
+
+/* --- Inverted: Ensure vertical divider is visible between comparisons --- */
+.kpi-container.kpi-inverted .divider-v {
+    align-self: stretch !important;
+    height: auto !important;
+    min-height: 100%;
+}
+
+/* --- Inverted: comparison values need room to breathe in small containers --- */
+.kpi-container.kpi-inverted .comp-block {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

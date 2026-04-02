@@ -4,7 +4,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
      * @file ModernKPI.js
      * @description A modern, customizable KPI card extension for Qlik Sense.
      * @author Ala Aldin Hija
-     * @version 2.0.0
+     * @version 2.1.0
      * @license MIT
      */
 
@@ -483,12 +483,23 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 dividerVWidth: 1,
                 // Horizontal divider position (null = auto, number = custom margin-top in px)
                 dividerHPosition: null,
+                // Alert defaults
+                enableAlert: false,
+                alertExpression: "",
+                alertMessage: "⚠ Below Target",
+                alertPosition: "top",
+                alertColor: "#e74c3c",
+                alertTextColor: "#ffffff",
+                alertFontSize: 12,
+                enableBrowserNotification: false,
+                // Layout options
+                invertLayout: false,
                 // About section - static text values
                 aboutTitle: "Modern KPI Card",
                 aboutText1: "Modern KPI Card is a visualization extension that provides enhanced design options and better UI for your KPI objects.",
                 aboutText2: "Modern KPI Card offers a clean, modern interface with customizable styling, smooth animations, and responsive layout.",
                 aboutAuthor: "Created by Ala Aldin Hija",
-                aboutVersion: "Version: 1.0.0"
+                aboutVersion: "Version: 2.1.0"
             }
         },
 
@@ -824,6 +835,14 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                                 { value: "both", label: "Both (Chart + Comparison)" },
                                 { value: "none", label: "None" }
                             ]
+                        },
+
+                        invertLayout: {
+                            ref: "props.invertLayout",
+                            label: "Invert Layout (Comparisons on Top)",
+                            type: "boolean",
+                            defaultValue: false,
+                            show: function (d) { var m = d.props.bottomSectionMode || "comparison"; return m === "comparison" || m === "both"; }
                         },
 
                         // ========== MINI CHART (shown when chart/both) ==========
@@ -1741,6 +1760,92 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 },
 
                 // ============================================
+                // ALERTS SECTION
+                // ============================================
+                alertSection: {
+                    label: "Alerts",
+                    type: "items",
+                    items: {
+                        enableAlert: {
+                            ref: "props.enableAlert",
+                            label: "Enable Alert",
+                            type: "boolean",
+                            defaultValue: false
+                        },
+                        alertHelpText: {
+                            label: "Write an expression that returns 1 to trigger the alert, or 0 to hide it. Example: =If(Sum(Sales)/Sum(Target) < 0.5, 1, 0)",
+                            component: "text",
+                            show: function (d) { return d.props.enableAlert === true; }
+                        },
+                        alertExpression: {
+                            ref: "props.alertExpression",
+                            label: "Alert Condition Expression",
+                            type: "string",
+                            component: "expression",
+                            expression: "optional",
+                            defaultValue: "",
+                            show: function (d) { return d.props.enableAlert === true; },
+                            help: "Expression returning 1 (alert ON) or 0 (alert OFF). E.g.: =If(Sum(Sales)<1000, 1, 0)"
+                        },
+                        alertMessage: {
+                            ref: "props.alertMessage",
+                            label: "Alert Message",
+                            type: "string",
+                            expression: "optional",
+                            defaultValue: "⚠ Below Target",
+                            show: function (d) { return d.props.enableAlert === true; },
+                            help: "Supports expressions. E.g.: ='⚠ Sales at ' & Round(Sum(Sales)/Sum(Target)*100) & '%'"
+                        },
+                        alertPosition: {
+                            ref: "props.alertPosition",
+                            label: "Alert Position",
+                            type: "string",
+                            component: "dropdown",
+                            defaultValue: "top",
+                            options: [
+                                { value: "top", label: "Top of Card" },
+                                { value: "bottom", label: "Bottom of Card" },
+                                { value: "badge", label: "Corner Badge" }
+                            ],
+                            show: function (d) { return d.props.enableAlert === true; }
+                        },
+                        alertColor: {
+                            ref: "props.alertColor",
+                            label: "Alert Background Color",
+                            type: "string",
+                            component: "color-picker",
+                            defaultValue: "#e74c3c",
+                            dualOutput: true,
+                            show: function (d) { return d.props.enableAlert === true; }
+                        },
+                        alertTextColor: {
+                            ref: "props.alertTextColor",
+                            label: "Alert Text Color",
+                            type: "string",
+                            component: "color-picker",
+                            defaultValue: "#ffffff",
+                            dualOutput: true,
+                            show: function (d) { return d.props.enableAlert === true; }
+                        },
+                        alertFontSize: {
+                            ref: "props.alertFontSize",
+                            label: "Alert Font Size (px)",
+                            type: "number",
+                            defaultValue: 12,
+                            show: function (d) { return d.props.enableAlert === true; }
+                        },
+                        enableBrowserNotification: {
+                            ref: "props.enableBrowserNotification",
+                            label: "Browser Desktop Notification",
+                            type: "boolean",
+                            defaultValue: false,
+                            show: function (d) { return d.props.enableAlert === true; },
+                            help: "Shows a browser notification when the alert triggers. User must grant permission on first use."
+                        }
+                    }
+                },
+
+                // ============================================
                 // ABOUT SECTION
                 // ============================================
                 about: {
@@ -1765,7 +1870,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                             component: "text"
                         },
                         paragraph4: {
-                            label: "Version: 2.0.0",
+                            label: "Version: 2.1.0",
                             component: "text"
                         }
                     }
@@ -1807,14 +1912,18 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 var _lt  = layout.props.leftTitle || "";
                 var _rt  = layout.props.rightTitle || "";
                 var _tt  = layout.props.thirdTitle || "";
+                var _alertExpr = layout.props.alertExpression || "";
+                var _alertMsg  = layout.props.alertMessage || "";
                 var _needBg  = typeof _bg  === "string" && _bg.trim().charAt(0)  === "=";
                 var _needSub = typeof _sub === "string" && _sub.trim().charAt(0) === "=";
                 var _needTtl = typeof _ttl === "string" && _ttl.trim().charAt(0) === "=";
                 var _needLt  = typeof _lt  === "string" && _lt.trim().charAt(0)  === "=";
                 var _needRt  = typeof _rt  === "string" && _rt.trim().charAt(0)  === "=";
                 var _needTt  = typeof _tt  === "string" && _tt.trim().charAt(0)  === "=";
+                var _needAlertExpr = layout.props.enableAlert === true && typeof _alertExpr === "string" && _alertExpr.trim().charAt(0) === "=";
+                var _needAlertMsg  = layout.props.enableAlert === true && typeof _alertMsg  === "string" && _alertMsg.trim().charAt(0)  === "=";
 
-                if (_needBg || _needSub || _needTtl || _needLt || _needRt || _needTt) {
+                if (_needBg || _needSub || _needTtl || _needLt || _needRt || _needTt || _needAlertExpr || _needAlertMsg) {
                     try {
                         var _app = qlik.currApp(this) || qlik.currApp($element);
                         if (_app && _app.createGenericObject) {
@@ -1825,6 +1934,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                             if (_needLt)  _def.lt  = { qStringExpression: _lt.replace(/\/\/.*$/gm, '') };
                             if (_needRt)  _def.rt  = { qStringExpression: _rt.replace(/\/\/.*$/gm, '') };
                             if (_needTt)  _def.tt  = { qStringExpression: _tt.replace(/\/\/.*$/gm, '') };
+                            if (_needAlertExpr) _def.alertExpr = { qStringExpression: _alertExpr.replace(/\/\/.*$/gm, '') };
+                            if (_needAlertMsg)  _def.alertMsg  = { qStringExpression: _alertMsg.replace(/\/\/.*$/gm, '') };
                             var _sObj = null;
                             try {
                                 _sObj = await _app.createGenericObject(_def);
@@ -1849,6 +1960,10 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                                     layout.props.rightTitle = String(_lo.rt).trim();
                                 if (_needTt && _lo.tt != null && String(_lo.tt).trim() !== "")
                                     layout.props.thirdTitle = String(_lo.tt).trim();
+                                if (_needAlertExpr && _lo.alertExpr != null)
+                                    layout.props._alertExprResolved = String(_lo.alertExpr).trim();
+                                if (_needAlertMsg && _lo.alertMsg != null && String(_lo.alertMsg).trim() !== "")
+                                    layout.props.alertMessage = String(_lo.alertMsg).trim();
                             } finally {
                                 if (_sObj && _app.destroySessionObject) {
                                     try { _app.destroySessionObject(_sObj.id); } catch (_) {}
@@ -2438,19 +2553,43 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     scaledMainFont = Math.round(Math.max(10, Math.min(userMainFontSize, textCap)));
                 }
 
-                // --- Scale TITLE font size (uses user setting directly, only capped to prevent overflow) ---
+                // --- Scale TITLE font size (auto-fit: shrink to fit container width based on text length) ---
                 const userTitleFont = layout.props.mainTitleFontSize || 14;
-                const scaledTitleFont = Math.round(Math.max(8, Math.min(userTitleFont, cardHeight / 7, cardWidth * 0.12)));
+                const titleTextLen = String(layout.props.mainTitle || "").replace(/<[^>]*>/g, '').trim().length || 1;
+                const titleFitWidth = Math.max(40, cardWidth - (layout.props.titleIcon ? (layout.props.mainIconSize || 20) + 12 : 0) - 24);
+                const titleTextCap = titleFitWidth / (titleTextLen * 0.55);
+                const scaledTitleFont = Math.round(Math.max(8, Math.min(userTitleFont, cardHeight / 7, titleTextCap)));
 
-                // --- Scale COMPARISON VALUE font size ---
+                // --- Scale COMPARISON VALUE font size (auto-fit: shrink to fit available width) ---
                 let compFontSize = layout.props.compValueFontSize || 18;
+                const compColCount = [layout.props.enableLeft !== false, layout.props.enableRight !== false, layout.props.enableThird === true].filter(Boolean).length || 1;
+                const dividerVGap = compColCount > 1 ? ((layout.props.dividerVWidth || 1) + 12) * (compColCount - 1) : 0;
+                const compAvailWidth = Math.max(30, (cardWidth - 20 - dividerVGap) / compColCount - 8);
                 const compHCap = cardHeight / 9;
-                const compWCap = cardWidth * 0.1;
-                compFontSize = Math.round(Math.max(9, Math.min(compFontSize, compHCap, compWCap)));
+                const longestCompVal = Math.max(
+                    leftFormatted ? String(leftFormatted).length : 0,
+                    rightFormatted ? String(rightFormatted).length : 0,
+                    thirdFormatted ? String(thirdFormatted).length : 0
+                ) || 1;
+                const compCharW = 0.62;
+                const compTextCap = compAvailWidth / (longestCompVal * compCharW);
+                compFontSize = Math.round(Math.max(8, Math.min(compFontSize, compHCap, compTextCap)));
 
-                // --- Scale COMPARISON TITLE font size ---
+                // --- Scale COMPARISON TITLE font size (auto-fit: shrink to fit available width) ---
                 const userCompTitleFont = layout.props.leftTitleFontSize || 12;
-                const scaledCompTitleFont = Math.round(Math.max(7, Math.min(userCompTitleFont, cardHeight / 14, cardWidth * 0.07)));
+                const longestCompTitle = Math.max(
+                    String(layout.props.leftTitle || "").length,
+                    String(layout.props.rightTitle || "").length,
+                    String(layout.props.thirdTitle || "").length
+                ) || 1;
+                const compTitleTextCap = compAvailWidth / (longestCompTitle * 0.56);
+                const scaledCompTitleFont = Math.round(Math.max(7, Math.min(userCompTitleFont, cardHeight / 14, compTitleTextCap)));
+
+                // --- Inverted layout: shrink main value, boost comparison values ---
+                if (layout.props.invertLayout) {
+                    scaledMainFont = Math.round(scaledMainFont * 0.5);
+                    compFontSize = Math.round(Math.max(compFontSize, scaledMainFont * 1.1, 14));
+                }
 
                 // --- Scale ARROW size ---
                 const scaledArrowFont = Math.round(Math.max(8, Math.min(14, cardHeight / 11, cardWidth * 0.08)));
@@ -2633,13 +2772,99 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 }
 
                 // ============================================
+                // ALERT SYSTEM
+                // ============================================
+                let alertHtml = "";
+                let alertTriggered = false;
+                let alertSignature = "off";
+                if (layout.props.enableAlert === true) {
+                    var alertExprRaw = layout.props.alertExpression || "";
+                    var alertExprResolved = layout.props._alertExprResolved || alertExprRaw;
+
+                    // Determine if alert should fire:
+                    // - Expression returns 1, "1", "true", "yes" → alert ON
+                    // - Plain number without expression → treat as threshold (mainVal < threshold)
+                    // - Empty → no alert
+                    if (alertExprResolved && String(alertExprResolved).trim() !== "") {
+                        var exprVal = String(alertExprResolved).trim().toLowerCase();
+                        var exprNum = parseFloat(exprVal);
+                        if (exprVal === "1" || exprVal === "true" || exprVal === "yes") {
+                            alertTriggered = true;
+                        } else if (!isNaN(exprNum) && exprNum === 1) {
+                            alertTriggered = true;
+                        } else if (exprVal === "0" || exprVal === "false" || exprVal === "no") {
+                            alertTriggered = false;
+                        } else if (!isNaN(exprNum) && exprNum !== 0) {
+                            alertTriggered = true;
+                        }
+                    }
+
+                    var alertMsg = layout.props.alertMessage || "⚠ Alert";
+                    var alertPos = layout.props.alertPosition || "top";
+                    var alertBgColor = fixColor(layout.props.alertColor, "#e74c3c");
+                    var alertTxtColor = fixColor(layout.props.alertTextColor, "#ffffff");
+                    var alertFs = layout.props.alertFontSize || 12;
+
+                    alertSignature = [
+                        alertTriggered ? 1 : 0,
+                        alertPos,
+                        alertBgColor,
+                        alertTxtColor,
+                        alertFs,
+                        alertMsg
+                    ].join("|");
+
+                    if (alertTriggered) {
+                        if (alertPos === "badge") {
+                            alertHtml = '<div class="kpi-alert-badge" style="background:' + alertBgColor + ';color:' + alertTxtColor + ';font-size:' + alertFs + 'px;">' + escapeHtml(alertMsg) + '</div>';
+                        } else {
+                            alertHtml = '<div class="kpi-alert-banner kpi-alert-' + alertPos + '" style="background:' + alertBgColor + ';color:' + alertTxtColor + ';font-size:' + alertFs + 'px;">' + escapeHtml(alertMsg) + '</div>';
+                        }
+
+                        // Browser notification (fire once per alert trigger, reset when alert clears)
+                        if (layout.props.enableBrowserNotification === true) {
+                            var alertNotifKey = "kpiAlertNotif_" + (layout.qInfo ? layout.qInfo.qId : "unknown");
+                            if (!$element.data(alertNotifKey)) {
+                                $element.data(alertNotifKey, true);
+                                try {
+                                    if (typeof Notification !== "undefined") {
+                                        if (Notification.permission === "granted") {
+                                            new Notification("KPI Alert: " + (layout.props.mainTitle || "KPI"), { body: alertMsg });
+                                        } else if (Notification.permission === "default") {
+                                            Notification.requestPermission().then(function (perm) {
+                                                if (perm === "granted") {
+                                                    new Notification("KPI Alert: " + (layout.props.mainTitle || "KPI"), { body: alertMsg });
+                                                }
+                                            });
+                                        }
+                                    }
+                                } catch (notifErr) {
+                                    console.warn("[ModernKPI] Browser notification failed:", notifErr);
+                                }
+                            }
+                        }
+                    } else {
+                        var alertNotifKey2 = "kpiAlertNotif_" + (layout.qInfo ? layout.qInfo.qId : "unknown");
+                        $element.removeData(alertNotifKey2);
+                    }
+
+                    // Clean up resolved expression to avoid stale data on next paint
+                    delete layout.props._alertExprResolved;
+                }
+
+                // ============================================
+                // INVERTED LAYOUT
+                // ============================================
+                const invertLayout = !!(layout.props.invertLayout);
+
+                // ============================================
                 // BUILD FINAL HTML
                 // ============================================
                 // Use the isChartDisabled variable already declared above
                 const noChartClass = isChartDisabled ? "no-chart" : "";
-                // When there's no bottom content at all (no chart AND no comparison), center the main content vertically
-                const hasBottomContent = (showChart && hasChartSvg) || (showComparison && comparisonBlocks.length > 0);
-                const centerContentClass = !hasBottomContent ? "kpi-center-content" : "";
+                // When there's no secondary content at all (no chart AND no comparison), center the main content vertically
+                const hasSecondaryContent = (showChart && hasChartSvg) || (showComparison && comparisonBlocks.length > 0);
+                const centerContentClass = (!hasSecondaryContent && !invertLayout) ? "kpi-center-content" : "";
                 // When both chart + comparison are shown, use compact layout
                 const bothModeClass = (showChart && hasChartSvg && showComparison && comparisonBlocks.length > 0) ? "kpi-both-mode" : "";
                 const mainValueAlignment = layout.props.mainValueAlignment || "center";
@@ -2796,18 +3021,11 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 // In flip card mode, wrap in flip card structure
                 let html = '';
 
-                if (isFlipCardMode) {
-                    // Flip card mode - use full flip structure
-                    html = `
-                    <div class="kpi-size-wrapper">
-                        <div class="kpi-flip-card-wrapper">
-                            <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass} kpi-flip-card" style="${cardStyle}">
-                                ${tooltipIconHtml}
-                                <div class="flip-card-front-content">
-                                    ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" data-icon-pos="${mainIconPos}" style="${iconOffsetStyle}justify-content:${headerAlignment} !important; width: 100%; display: flex;">
+                // Build reusable content blocks
+                const headerHtml = headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" data-icon-pos="${mainIconPos}" style="${iconOffsetStyle}justify-content:${headerAlignment} !important; width: 100%; display: flex;">
                                         ${headerContent}
-                                    </div>` : ""}
-                                    <div class="main-value ${mainValueAlignClass}" style="
+                                    </div>` : "";
+                const mainValueHtml = `<div class="main-value ${mainValueAlignClass}" style="
                                         font-size: ${scaledMainFont}px !important;
                                         font-weight: ${mainValueFontWeight} !important;
                                         text-align: ${mainValueAlignment} !important;
@@ -2815,10 +3033,26 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                                         margin-bottom: ${mainValueMarginBottom}px;
                                     ">
                                         ${mainValueInner}
-                                    </div>
-                                    ${miniChartSvg ? `<div class="chart-container">${miniChartSvg}</div>` : ""}
-                                    ${dividerH}
-                                    ${comparisonHtml}
+                                    </div>`;
+                const chartHtml = miniChartSvg ? `<div class="chart-container">${miniChartSvg}</div>` : "";
+                const alertTopHtml = (alertTriggered && layout.props.alertPosition === "top") ? alertHtml : "";
+                const alertBottomHtml = (alertTriggered && layout.props.alertPosition === "bottom") ? alertHtml : "";
+                const alertBadgeHtml = (alertTriggered && layout.props.alertPosition === "badge") ? alertHtml : "";
+                const invertClass = invertLayout ? " kpi-inverted" : "";
+
+                // DOM order is always: alert-top → header → value → chart → divider → comparisons → alert-bottom
+                // CSS `order` property handles visual reordering when invertLayout is enabled
+                const cardInnerContent = `${alertTopHtml}${headerHtml}${mainValueHtml}${chartHtml}${dividerH}${comparisonHtml}${alertBottomHtml}`;
+
+                if (isFlipCardMode) {
+                    html = `
+                    <div class="kpi-size-wrapper">
+                        <div class="kpi-flip-card-wrapper">
+                            <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass}${invertClass} kpi-flip-card" style="${cardStyle}">
+                                ${tooltipIconHtml}
+                                ${alertBadgeHtml}
+                                <div class="flip-card-front-content">
+                                    ${cardInnerContent}
                                 </div>
                                 <div class="flip-card-back" style="background:${flipBackInheritBg ? cardBackground : '#ffffff'};">${flipCardBackContent}</div>
                             </div>
@@ -2826,26 +3060,12 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     </div>
                 `;
                 } else {
-                    // Standard mode - simple structure without flip wrapper
                     html = `
                     <div class="kpi-size-wrapper">
-                        <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass}" style="${cardStyle}">
+                        <div class="kpi-container ${noChartClass} ${centerContentClass} ${bothModeClass}${invertClass}" style="${cardStyle}">
                             ${tooltipIconHtml}
-                            ${headerContent ? `<div class="kpi-header ${mainIconPos === "top" ? "icon-top" : ""}" data-align="${mainTitleAlignment}" data-icon-pos="${mainIconPos}" style="${iconOffsetStyle}justify-content:${headerAlignment} !important; width: 100%; display: flex;">
-                                ${headerContent}
-                            </div>` : ""}
-                            <div class="main-value ${mainValueAlignClass}" style="
-                                font-size: ${scaledMainFont}px !important;
-                                font-weight: ${mainValueFontWeight} !important;
-                                text-align: ${mainValueAlignment} !important;
-                                color: ${mainValueColor} !important;
-                                margin-bottom: ${mainValueMarginBottom}px;
-                            ">
-                                ${mainValueInner}
-                            </div>
-                            ${miniChartSvg ? `<div class="chart-container">${miniChartSvg}</div>` : ""}
-                            ${dividerH}
-                            ${comparisonHtml}
+                            ${alertBadgeHtml}
+                            ${cardInnerContent}
                         </div>
                     </div>
                 `;
@@ -2867,7 +3087,9 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     enableTooltip ? 1 : 0,
                     mainValueAlignment,
                     mainTitleAlignment,
-                    !!miniChartSvg ? 1 : 0
+                    !!miniChartSvg ? 1 : 0,
+                    invertLayout ? 1 : 0,
+                    alertSignature
                 ].join("|");
 
                 const prevKey = $element.data("kpiStructKey");
@@ -3004,6 +3226,25 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 // Apply scaled title font
                 if ($c.kpiTitle.length > 0) {
                     $c.kpiTitle[0].style.setProperty('font-size', scaledTitleFont + 'px', 'important');
+                }
+
+                // Patch divider colors and sizes (always, so color changes apply immediately)
+                var $divH = $element.find('.divider-h');
+                if ($divH.length) {
+                    $divH[0].style.background = dividerHColor;
+                    $divH[0].style.height = (layout.props.dividerHWidth !== undefined ? layout.props.dividerHWidth : 1) + 'px';
+                }
+                $element.find('.divider-v').each(function () {
+                    this.style.background = dividerVColor;
+                    this.style.width = (layout.props.dividerVWidth !== undefined ? layout.props.dividerVWidth : 1) + 'px';
+                });
+
+                // Toggle helper class for alert+tooltip coexistence (fallback for browsers without :has())
+                var $kpiC = $element.find('.kpi-container');
+                if ($kpiC.length) {
+                    $kpiC.toggleClass('has-tooltip', enableTooltip);
+                    $kpiC.toggleClass('has-alert-top', alertTriggered && layout.props.alertPosition === "top");
+                    $kpiC.toggleClass('has-alert-badge', alertTriggered && layout.props.alertPosition === "badge");
                 }
 
                 // ============================================
