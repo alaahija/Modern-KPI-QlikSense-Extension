@@ -141,8 +141,7 @@ MIT License - feel free to use and modify!
 3. Configure **Display Mode**: Comparison KPIs, Mini Chart, Both, or None.
 4. Optionally add a **Click Action** (Go to Sheet / Open URL) in the Interactions section.
 5. Style with colors, gradients, shadows, and conditional background expressions.
-6. Optionally enable **Alerts** with a Qlik expression to show in-card warnings.
-7. Optionally enable **Invert Layout** to promote comparisons as primary values.
+6. Optionally enable **Invert Layout** to promote comparisons as primary values.
 
 ---
 
