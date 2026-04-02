@@ -215,7 +215,6 @@ Swap the visual hierarchy so comparison KPIs appear prominently at the top and t
 | Chart shows one point | Ensure a dimension is added with multiple values. |
 | Conditional bg not working | Expression must return a quoted color string (e.g., `'#FF0000'`). |
 | Click action not working | Verify Sheet ID from URL or ensure full URL with `https://`. |
-| Card shows error state | Open browser console (F12), look for `[ModernKPI]` errors. |
 
 ---
 
