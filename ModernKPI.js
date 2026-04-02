@@ -1765,6 +1765,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 alertSection: {
                     label: "Alerts",
                     type: "items",
+                    show: false,
                     items: {
                         enableAlert: {
                             ref: "props.enableAlert",
@@ -2524,6 +2525,25 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 const cardWidth = $element.width() || 300;
                 const cardHeight = $element.height() || 200;
 
+                // Deferred re-measure: on first paint the Qlik container may not
+                // have its final dimensions yet, producing wrong font sizes.
+                // Schedule a one-time check; if size changed, invalidate and repaint.
+                if (!$element.data("kpiInitSized")) {
+                    $element.data("kpiInitSized", true);
+                    var _initW = cardWidth, _initH = cardHeight;
+                    setTimeout(function () {
+                        var newW = $element.width(), newH = $element.height();
+                        if (newW && newH && (Math.abs(newW - _initW) > 2 || Math.abs(newH - _initH) > 2)) {
+                            $element.removeData("kpiStructKey");
+                            if ($scope && $scope.backendApi) {
+                                $scope.backendApi.getProperties().then(function (p) {
+                                    $scope.backendApi.setProperties(p);
+                                });
+                            }
+                        }
+                    }, 150);
+                }
+
                 // Count visible comparison KPIs for vertical space budget
                 const visibleCompCount = [
                     layout.props.enableLeft !== false,
@@ -2564,16 +2584,17 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 let compFontSize = layout.props.compValueFontSize || 18;
                 const compColCount = [layout.props.enableLeft !== false, layout.props.enableRight !== false, layout.props.enableThird === true].filter(Boolean).length || 1;
                 const dividerVGap = compColCount > 1 ? ((layout.props.dividerVWidth || 1) + 12) * (compColCount - 1) : 0;
-                const compAvailWidth = Math.max(30, (cardWidth - 20 - dividerVGap) / compColCount - 8);
+                const compPad = cardWidth <= 160 ? 12 : cardWidth <= 220 ? 16 : 20;
+                const compAvailWidth = Math.max(30, (cardWidth - compPad - dividerVGap) / compColCount - 6);
                 const compHCap = cardHeight / 9;
                 const longestCompVal = Math.max(
                     leftFormatted ? String(leftFormatted).length : 0,
                     rightFormatted ? String(rightFormatted).length : 0,
                     thirdFormatted ? String(thirdFormatted).length : 0
                 ) || 1;
-                const compCharW = 0.62;
+                const compCharW = 0.58;
                 const compTextCap = compAvailWidth / (longestCompVal * compCharW);
-                compFontSize = Math.round(Math.max(8, Math.min(compFontSize, compHCap, compTextCap)));
+                compFontSize = Math.round(Math.max(9, Math.min(compFontSize, compHCap, compTextCap)));
 
                 // --- Scale COMPARISON TITLE font size (auto-fit: shrink to fit available width) ---
                 const userCompTitleFont = layout.props.leftTitleFontSize || 12;
@@ -2582,8 +2603,8 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     String(layout.props.rightTitle || "").length,
                     String(layout.props.thirdTitle || "").length
                 ) || 1;
-                const compTitleTextCap = compAvailWidth / (longestCompTitle * 0.56);
-                const scaledCompTitleFont = Math.round(Math.max(7, Math.min(userCompTitleFont, cardHeight / 14, compTitleTextCap)));
+                const compTitleTextCap = compAvailWidth / (longestCompTitle * 0.52);
+                const scaledCompTitleFont = Math.round(Math.max(8, Math.min(userCompTitleFont, cardHeight / 12, compTitleTextCap)));
 
                 // --- Inverted layout: shrink main value, boost comparison values ---
                 if (layout.props.invertLayout) {
@@ -2887,7 +2908,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 const flipBackInheritBg = layout.props.flipBackInheritBg !== false;
                 const flipBackTextAlign = layout.props.flipBackTextAlign || "center";
 
-                const isFlipCardMode = tooltipMode === true;
+                const isFlipCardMode = enableTooltip && tooltipMode === true;
 
                 let tooltipIconHtml = "";
                 let flipCardBackContent = "";
@@ -3172,6 +3193,15 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                     if (miniChartSvg) {
                         const $chartContainer = $element.find('.chart-container');
                         if ($chartContainer.length) $chartContainer.html(miniChartSvg);
+                    }
+
+                    // Patch flip card back content so expression/tooltip changes reflect immediately
+                    if (isFlipCardMode && flipCardBackContent) {
+                        const $flipBack = $element.find('.flip-card-back');
+                        if ($flipBack.length) {
+                            $flipBack.html(flipCardBackContent);
+                            $flipBack[0].style.background = flipBackInheritBg ? cardBackground : '#ffffff';
+                        }
                     }
                 }
 

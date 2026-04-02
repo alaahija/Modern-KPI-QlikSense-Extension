@@ -945,8 +945,9 @@
     justify-content: center !important;
     align-items: center !important;
     min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
     align-self: stretch !important;
-    /* Match height with other blocks and divider */
     height: auto;
     margin: 0 !important;
     padding: 0 !important;
@@ -984,10 +985,9 @@
     margin-top: 0;
     padding: 0;
     max-width: 100%;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    hyphens: auto;
-    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     transition: font-size 0.3s ease, color 0.3s ease;
 }
 
@@ -1537,11 +1537,15 @@
     font-size: 10px;
     margin-bottom: 2px;
     line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .kpi-compact .comp-value {
     font-size: 13px;
     gap: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .kpi-compact .comp-arrow {
@@ -1610,11 +1614,15 @@
 .kpi-tiny .comp-title {
     font-size: 9px;
     margin-bottom: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .kpi-tiny .comp-value {
     font-size: 11px;
     gap: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .kpi-tiny .comp-arrow {
