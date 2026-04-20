@@ -2498,3 +2498,40 @@ div:has(> .kpi-container) {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* ============================================
+   CALCULATION CONDITION NOT-FULFILLED STATE
+   Matches Qlik native KPI striped message
+   ============================================ */
+.kpi-calc-cond-state {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+.kpi-calc-cond-stripes {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(135deg, transparent 0, transparent 8px, rgba(0,0,0,0.05) 8px, rgba(0,0,0,0.05) 10px);
+    pointer-events: none;
+    z-index: 0;
+    border-radius: inherit;
+}
+.kpi-calc-cond-msg {
+    position: relative;
+    z-index: 1;
+    color: #555;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 8px 12px;
+    max-width: 90%;
+    word-wrap: break-word;
+    font-family: Inter, Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
