@@ -353,9 +353,17 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 qInitialDataFetch: [{
                     qWidth: 10,
                     qHeight: 500
-                }]
+                }],
+                qCalcCondition: {
+                    qCond: { qv: "" },
+                    qMsg: ""
+                }
             },
             props: {
+                // Calculation condition expression (evaluated extension-side in paint's pre-render block)
+                calcConditionExpr: "",
+                // Calculation condition "Displayed message" text (synced into qHyperCubeDef.qCalcCondition.qMsg in onChange)
+                calcCondMsgText: "",
                 // Bottom section mode: "comparison" (default), "chart", "both", "none"
                 bottomSectionMode: "comparison",
                 // Default: Chart disabled (synced from bottomSectionMode in onChange)
@@ -577,6 +585,29 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
 
             // Normalise every measure in one pass (creates fresh defaults for null entries)
             props.qHyperCubeDef.qMeasures = props.qHyperCubeDef.qMeasures.map(ensureMeasureStructure);
+
+            // Ensure qCalcCondition structure exists so the engine can evaluate the condition.
+            // The user-facing "Displayed message" lives in props.calcCondMsgText (stable plain-string binding)
+            // and is synced into qHyperCubeDef.qCalcCondition.qMsg here so the engine produces qCalcCondMsg.
+            if (!props.qHyperCubeDef.qCalcCondition) {
+                props.qHyperCubeDef.qCalcCondition = { qCond: { qv: "" }, qMsg: "" };
+            }
+            if (!props.qHyperCubeDef.qCalcCondition.qCond) {
+                props.qHyperCubeDef.qCalcCondition.qCond = { qv: "" };
+            }
+            // Sync user-facing text from props into qMsg so engine uses it for qCalcCondMsg
+            if (props.props && typeof props.props.calcCondMsgText === "string") {
+                props.qHyperCubeDef.qCalcCondition.qMsg = props.props.calcCondMsgText;
+            } else if (props.qHyperCubeDef.qCalcCondition.qMsg === undefined || props.qHyperCubeDef.qCalcCondition.qMsg === null || typeof props.qHyperCubeDef.qCalcCondition.qMsg !== "string") {
+                props.qHyperCubeDef.qCalcCondition.qMsg = "";
+            }
+            // Mirror props.calcConditionExpr into qCond.qv so the engine still honors the condition
+            // when suppressing hypercube data requests (the actual render-side evaluation happens
+            // extension-side in paint's pre-render block because the engine does not project
+            // qCalcCondMsg into extension layouts).
+            if (props.props && typeof props.props.calcConditionExpr === "string") {
+                props.qHyperCubeDef.qCalcCondition.qCond.qv = props.props.calcConditionExpr;
+            }
 
             // Sync enableChart and qHeight from bottomSectionMode
             if (props.props) {
@@ -1847,6 +1878,37 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 },
 
                 // ============================================
+                // ADD-ONS SECTION (Calculation condition)
+                // ============================================
+                addons: {
+                    label: "Add-ons",
+                    type: "items",
+                    items: {
+                        dataHandling: {
+                            type: "items",
+                            label: "Data handling",
+                            items: {
+                                calcCondition: {
+                                    ref: "props.calcConditionExpr",
+                                    label: "Calculation condition",
+                                    type: "string",
+                                    component: "expression",
+                                    expression: "optional",
+                                    defaultValue: ""
+                                },
+                                calcCondMsg: {
+                                    ref: "props.calcCondMsgText",
+                                    label: "Displayed message",
+                                    type: "string",
+                                    expression: "optional",
+                                    defaultValue: ""
+                                }
+                            }
+                        }
+                    }
+                },
+
+                // ============================================
                 // ABOUT SECTION
                 // ============================================
                 about: {
@@ -1915,6 +1977,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 var _tt  = layout.props.thirdTitle || "";
                 var _alertExpr = layout.props.alertExpression || "";
                 var _alertMsg  = layout.props.alertMessage || "";
+                var _calcCond  = layout.props.calcConditionExpr || "";
                 var _needBg  = typeof _bg  === "string" && _bg.trim().charAt(0)  === "=";
                 var _needSub = typeof _sub === "string" && _sub.trim().charAt(0) === "=";
                 var _needTtl = typeof _ttl === "string" && _ttl.trim().charAt(0) === "=";
@@ -1923,8 +1986,9 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 var _needTt  = typeof _tt  === "string" && _tt.trim().charAt(0)  === "=";
                 var _needAlertExpr = layout.props.enableAlert === true && typeof _alertExpr === "string" && _alertExpr.trim().charAt(0) === "=";
                 var _needAlertMsg  = layout.props.enableAlert === true && typeof _alertMsg  === "string" && _alertMsg.trim().charAt(0)  === "=";
+                var _needCalcCond  = typeof _calcCond === "string" && _calcCond.trim() !== "";
 
-                if (_needBg || _needSub || _needTtl || _needLt || _needRt || _needTt || _needAlertExpr || _needAlertMsg) {
+                if (_needBg || _needSub || _needTtl || _needLt || _needRt || _needTt || _needAlertExpr || _needAlertMsg || _needCalcCond) {
                     try {
                         var _app = qlik.currApp(this) || qlik.currApp($element);
                         if (_app && _app.createGenericObject) {
@@ -1937,6 +2001,7 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                             if (_needTt)  _def.tt  = { qStringExpression: _tt.replace(/\/\/.*$/gm, '') };
                             if (_needAlertExpr) _def.alertExpr = { qStringExpression: _alertExpr.replace(/\/\/.*$/gm, '') };
                             if (_needAlertMsg)  _def.alertMsg  = { qStringExpression: _alertMsg.replace(/\/\/.*$/gm, '') };
+                            if (_needCalcCond)  _def.calcCond  = { qStringExpression: _calcCond.replace(/\/\/.*$/gm, '') };
                             var _sObj = null;
                             try {
                                 _sObj = await _app.createGenericObject(_def);
@@ -1965,6 +2030,11 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                                     layout.props._alertExprResolved = String(_lo.alertExpr).trim();
                                 if (_needAlertMsg && _lo.alertMsg != null && String(_lo.alertMsg).trim() !== "")
                                     layout.props.alertMessage = String(_lo.alertMsg).trim();
+                                if (_needCalcCond) {
+                                    var cVal = String(_lo.calcCond || "").trim().toLowerCase();
+                                    var cNum = parseFloat(cVal);
+                                    layout.props._calcCondFailed = !(cVal === "1" || cVal === "true" || cVal === "yes" || (!isNaN(cNum) && cNum !== 0));
+                                }
                             } finally {
                                 if (_sObj && _app.destroySessionObject) {
                                     try { _app.destroySessionObject(_sObj.id); } catch (_) {}
@@ -2002,6 +2072,36 @@ define(["qlik", "jquery", "text!./style.css"], function (qlik, $, cssContent) {
                 // Clear previous tooltip (scoped to this card only)
                 $element.find(".kpi-tooltip").remove();
 
+                // --- Calculation condition not fulfilled (evaluated extension-side in pre-render block) ---
+                var _userMsg = (layout.props && typeof layout.props.calcCondMsgText === "string") ? layout.props.calcCondMsgText.trim() : "";
+
+                if (layout.props._calcCondFailed === true) {
+                    if ($element.data("kpiChartTooltip")) {
+                        $element.data("kpiChartTooltip").remove();
+                        $element.removeData("kpiChartTooltip");
+                    }
+                    $element.removeData("kpiStructKey");
+                    var ccBg = fixColor(layout.props.bgColor, "#ffffff");
+                    var ccRadius = layout.props.borderRadius || 5;
+                    var ccBorder = layout.props.showBorder !== false
+                        ? (layout.props.borderWidth || 1) + "px solid " + fixColor(layout.props.borderColor, "#e0e0e0")
+                        : "none";
+                    var _finalMsg = _userMsg !== "" ? _userMsg : "The calculation condition is not fulfilled";
+                    var ccMsg = escapeHtml(String(_finalMsg));
+                    $element.html(
+                        '<div class="kpi-size-wrapper">' +
+                            '<div class="kpi-container kpi-calc-cond-state" style="background:' + ccBg + ';border:' + ccBorder + ';border-radius:' + ccRadius + 'px;">' +
+                                '<div class="kpi-calc-cond-stripes"></div>' +
+                                '<div class="kpi-calc-cond-msg">' + ccMsg + '</div>' +
+                            '</div>' +
+                        '</div>'
+                    );
+                    return qlik.Promise.resolve();
+                }
+                // Force rebuild when exiting calc-cond state (next paint won't hit in-place patch)
+                if ($element.find(".kpi-calc-cond-state").length) {
+                    $element.removeData("kpiStructKey");
+                }
 
                 // Check if measures are defined - if not, show empty state
                 const cube = layout.qHyperCube;
